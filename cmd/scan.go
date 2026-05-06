@@ -139,7 +139,7 @@ func runScan(cmd *cobra.Command, args []string) error {
 	}
 
 	// 5. Filter for display only (does NOT affect score)
-	display := r
+	var display *scanner.Report
 	if !verbose {
 		display = filterReport(r, scanner.Low)
 	} else {
@@ -181,4 +181,3 @@ func filterReport(r *scanner.Report, minSev scanner.Severity) *scanner.Report {
 	}
 	return filtered
 }
-

@@ -9,7 +9,7 @@ import (
 func TestDetect_ExplicitPaths(t *testing.T) {
 	dir := t.TempDir()
 	confFile := filepath.Join(dir, "lnd.conf")
-	if err := os.WriteFile(confFile, []byte("[Application Options]\n"), 0600); err != nil {
+	if err := os.WriteFile(confFile, []byte("[Application Options]\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 
@@ -29,7 +29,7 @@ func TestDetect_ExplicitPaths(t *testing.T) {
 func TestDetect_AutoFindConfig(t *testing.T) {
 	dir := t.TempDir()
 	confFile := filepath.Join(dir, DefaultConfigName)
-	if err := os.WriteFile(confFile, []byte("[Application Options]\n"), 0600); err != nil {
+	if err := os.WriteFile(confFile, []byte("[Application Options]\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 
@@ -61,7 +61,7 @@ func TestDetect_DataDirFromConfig(t *testing.T) {
 	customData := filepath.Join(dir, "custom-data")
 	confContent := "[Application Options]\ndatadir=" + customData + "\n"
 	confFile := filepath.Join(dir, DefaultConfigName)
-	if err := os.WriteFile(confFile, []byte(confContent), 0600); err != nil {
+	if err := os.WriteFile(confFile, []byte(confContent), 0o600); err != nil {
 		t.Fatal(err)
 	}
 
@@ -79,7 +79,7 @@ func TestDetect_DataDirFallback(t *testing.T) {
 	dir := t.TempDir()
 	// Config exists but has no datadir key
 	confFile := filepath.Join(dir, DefaultConfigName)
-	if err := os.WriteFile(confFile, []byte("[Application Options]\nalias=mynode\n"), 0600); err != nil {
+	if err := os.WriteFile(confFile, []byte("[Application Options]\nalias=mynode\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 
@@ -95,21 +95,23 @@ func TestDetect_DataDirFallback(t *testing.T) {
 }
 
 func TestPaths_ChainDir(t *testing.T) {
+	dataDir := "/home/user/.lnd/data"
 	p := Paths{
-		DataDir: "/home/user/.lnd/data",
+		DataDir: dataDir,
 		Chain:   "bitcoin",
 		Network: "mainnet",
 	}
 
-	want := filepath.Join("/home/user/.lnd/data", "chain", "bitcoin", "mainnet")
+	want := filepath.Join(dataDir, "chain", "bitcoin", "mainnet")
 	if got := p.ChainDir(); got != want {
 		t.Errorf("ChainDir() = %q, want %q", got, want)
 	}
 }
 
 func TestPaths_FileLocations(t *testing.T) {
+	dataDir := "/home/user/.lnd/data"
 	p := Paths{
-		DataDir: "/home/user/.lnd/data",
+		DataDir: dataDir,
 		Chain:   "bitcoin",
 		Network: "mainnet",
 	}
@@ -150,7 +152,7 @@ func TestExpandHome(t *testing.T) {
 	}
 
 	got := expandHome("~/some/path")
-	want := filepath.Join(home, "some/path")
+	want := filepath.Join(home, "some", "path")
 	if got != want {
 		t.Errorf("expandHome(~/some/path) = %q, want %q", got, want)
 	}

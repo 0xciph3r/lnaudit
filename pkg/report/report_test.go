@@ -113,7 +113,9 @@ func TestJSONWriter_ScoreAndRating(t *testing.T) {
 	}
 
 	var out JSONOutput
-	json.Unmarshal(buf.Bytes(), &out)
+	if err := json.Unmarshal(buf.Bytes(), &out); err != nil {
+		t.Fatalf("json.Unmarshal error: %v", err)
+	}
 
 	if out.Score != r.Score() {
 		t.Errorf("JSON score = %d, want %d", out.Score, r.Score())
@@ -131,7 +133,9 @@ func TestJSONWriter_FindingsCount(t *testing.T) {
 	}
 
 	var out JSONOutput
-	json.Unmarshal(buf.Bytes(), &out)
+	if err := json.Unmarshal(buf.Bytes(), &out); err != nil {
+		t.Fatalf("json.Unmarshal error: %v", err)
+	}
 
 	if len(out.Findings) != len(r.Findings) {
 		t.Errorf("JSON findings count = %d, want %d", len(out.Findings), len(r.Findings))
@@ -146,7 +150,9 @@ func TestJSONWriter_SummaryTotals(t *testing.T) {
 	}
 
 	var out JSONOutput
-	json.Unmarshal(buf.Bytes(), &out)
+	if err := json.Unmarshal(buf.Bytes(), &out); err != nil {
+		t.Fatalf("json.Unmarshal error: %v", err)
+	}
 
 	if out.Summary["critical"] != 2 {
 		t.Errorf("JSON summary critical = %d, want 2", out.Summary["critical"])

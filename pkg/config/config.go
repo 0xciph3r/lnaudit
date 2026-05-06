@@ -10,18 +10,18 @@ import (
 // LndConfig represents parsed settings from lnd.conf relevant to security scanning.
 type LndConfig struct {
 	// [Application Options]
-	DataDir            string `ini:"datadir"`
-	NoMacaroons        bool   `ini:"no-macaroons"`
-	DebugLevel         string `ini:"debuglevel"`
-	DebugHTLC          bool   `ini:"debughtlc"`
-	NoSeedBackup       bool   `ini:"noseedbackup"`
-	NoEncryptWallet    bool   `ini:"noencryptwallet"`
-	UnsafeDisconnect      bool   `ini:"unsafe-disconnect"`
-	TrickleDelay          int    `ini:"trickledelay"`
-	TrickleDelayExplicit  bool   // true if trickledelay was explicitly set in config
-	MaxPendingChannels    int    `ini:"maxpendingchannels"`
-	MaxChanSize           int64  `ini:"maxchansize"`
-	Alias                 string `ini:"alias"`
+	DataDir              string `ini:"datadir"`
+	NoMacaroons          bool   `ini:"no-macaroons"`
+	DebugLevel           string `ini:"debuglevel"`
+	DebugHTLC            bool   `ini:"debughtlc"`
+	NoSeedBackup         bool   `ini:"noseedbackup"`
+	NoEncryptWallet      bool   `ini:"noencryptwallet"`
+	UnsafeDisconnect     bool   `ini:"unsafe-disconnect"`
+	TrickleDelay         int    `ini:"trickledelay"`
+	TrickleDelayExplicit bool   // true if trickledelay was explicitly set in config
+	MaxPendingChannels   int    `ini:"maxpendingchannels"`
+	MaxChanSize          int64  `ini:"maxchansize"`
+	Alias                string `ini:"alias"`
 
 	// Listener configuration (multi-value keys)
 	RPCListeners  []string

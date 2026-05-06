@@ -75,7 +75,7 @@ func TestReport_Score_Deductions(t *testing.T) {
 	r.Add(Finding{ID: "T-2", Severity: High})     // -10
 	r.Add(Finding{ID: "T-3", Severity: Medium})   // -5
 	r.Add(Finding{ID: "T-4", Severity: Low})      // -2
-	r.Add(Finding{ID: "T-5", Severity: Info})      // -0
+	r.Add(Finding{ID: "T-5", Severity: Info})     // -0
 
 	want := 100 - 15 - 10 - 5 - 2
 	if s := r.Score(); s != want {
@@ -86,7 +86,7 @@ func TestReport_Score_Deductions(t *testing.T) {
 func TestReport_Score_Floor(t *testing.T) {
 	r := &Report{}
 	for i := 0; i < 10; i++ {
-		r.Add(Finding{Severity: Critical}) // 10 * -15 = -150
+		r.Add(Finding{Severity: Critical})
 	}
 	if s := r.Score(); s != 0 {
 		t.Errorf("score = %d, want 0 (floor)", s)

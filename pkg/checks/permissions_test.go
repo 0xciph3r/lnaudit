@@ -15,12 +15,19 @@ func skipOnWindows(t *testing.T) {
 	}
 }
 
+func writeTestFile(t *testing.T, path string, data []byte, perm os.FileMode) {
+	t.Helper()
+	if err := os.WriteFile(path, data, perm); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestCheckFilePermissions_TooPermissive(t *testing.T) {
 	skipOnWindows(t)
 
 	dir := t.TempDir()
 	walletPath := filepath.Join(dir, "wallet.db")
-	os.WriteFile(walletPath, []byte("fake-wallet"), 0644) // too permissive
+	writeTestFile(t, walletPath, []byte("fake-wallet"), 0o644) // too permissive
 
 	paths := FilePaths{WalletDB: walletPath}
 	findings := CheckFilePermissions(paths)
@@ -41,7 +48,7 @@ func TestCheckFilePermissions_Correct(t *testing.T) {
 
 	dir := t.TempDir()
 	walletPath := filepath.Join(dir, "wallet.db")
-	os.WriteFile(walletPath, []byte("fake-wallet"), 0600) // correct
+	writeTestFile(t, walletPath, []byte("fake-wallet"), 0o600) // correct
 
 	paths := FilePaths{WalletDB: walletPath}
 	findings := CheckFilePermissions(paths)
@@ -77,15 +84,15 @@ func TestCheckFilePermissions_MultipleFiles(t *testing.T) {
 
 	// wallet.db: too permissive
 	walletPath := filepath.Join(dir, "wallet.db")
-	os.WriteFile(walletPath, []byte("w"), 0666)
+	writeTestFile(t, walletPath, []byte("w"), 0o666)
 
 	// tls.key: correct
 	tlsPath := filepath.Join(dir, "tls.key")
-	os.WriteFile(tlsPath, []byte("k"), 0600)
+	writeTestFile(t, tlsPath, []byte("k"), 0o600)
 
 	// admin.macaroon: group-readable
 	macPath := filepath.Join(dir, "admin.macaroon")
-	os.WriteFile(macPath, []byte("m"), 0640)
+	writeTestFile(t, macPath, []byte("m"), 0o640)
 
 	paths := FilePaths{
 		WalletDB:      walletPath,
@@ -105,7 +112,7 @@ func TestCheckFilePermissions_ConfigFile640(t *testing.T) {
 
 	dir := t.TempDir()
 	confPath := filepath.Join(dir, "lnd.conf")
-	os.WriteFile(confPath, []byte("[Application Options]\n"), 0640) // acceptable
+	writeTestFile(t, confPath, []byte("[Application Options]\n"), 0o640) // acceptable
 
 	paths := FilePaths{ConfigFile: confPath}
 	findings := CheckFilePermissions(paths)
@@ -120,7 +127,7 @@ func TestCheckFilePermissions_ConfigFile644(t *testing.T) {
 
 	dir := t.TempDir()
 	confPath := filepath.Join(dir, "lnd.conf")
-	os.WriteFile(confPath, []byte("[Application Options]\n"), 0644) // world-readable
+	writeTestFile(t, confPath, []byte("[Application Options]\n"), 0o644) // world-readable
 
 	paths := FilePaths{ConfigFile: confPath}
 	findings := CheckFilePermissions(paths)
@@ -138,7 +145,7 @@ func TestCheckFilePermissions_TorOnionKey(t *testing.T) {
 
 	dir := t.TempDir()
 	keyPath := filepath.Join(dir, "v3_onion_private_key")
-	os.WriteFile(keyPath, []byte("onion-key"), 0644)
+	writeTestFile(t, keyPath, []byte("onion-key"), 0o644)
 
 	paths := FilePaths{TorOnionKey: keyPath}
 	findings := CheckFilePermissions(paths)
@@ -156,10 +163,12 @@ func TestCheckFilePermissions_SymlinkDetection(t *testing.T) {
 
 	dir := t.TempDir()
 	realFile := filepath.Join(dir, "real_wallet.db")
-	os.WriteFile(realFile, []byte("real"), 0600)
+	writeTestFile(t, realFile, []byte("real"), 0o600)
 
 	symlinkPath := filepath.Join(dir, "wallet.db")
-	os.Symlink(realFile, symlinkPath)
+	if err := os.Symlink(realFile, symlinkPath); err != nil {
+		t.Fatal(err)
+	}
 
 	paths := FilePaths{WalletDB: symlinkPath}
 	findings := CheckFilePermissions(paths)
@@ -177,14 +186,14 @@ func TestIsOverlyPermissive(t *testing.T) {
 		actual, max os.FileMode
 		overly      bool
 	}{
-		{0600, 0600, false},
-		{0644, 0600, true},
-		{0640, 0640, false},
-		{0640, 0600, true},
-		{0600, 0640, false},
-		{0666, 0600, true},
-		{0400, 0600, false},
-		{0700, 0600, true}, // execute bit on owner exceeds 0600
+		{0o600, 0o600, false},
+		{0o644, 0o600, true},
+		{0o640, 0o640, false},
+		{0o640, 0o600, true},
+		{0o600, 0o640, false},
+		{0o666, 0o600, true},
+		{0o400, 0o600, false},
+		{0o700, 0o600, true}, // execute bit on owner exceeds 0600
 	}
 	for _, tt := range tests {
 		got := isOverlyPermissive(tt.actual, tt.max)

@@ -22,13 +22,13 @@ type sensitiveFile struct {
 // and the Tor onion private key.
 func CheckFilePermissions(paths FilePaths) []scanner.Finding {
 	targets := []sensitiveFile{
-		{paths.WalletDB, "wallet.db", 0600, scanner.Critical, "keys"},
-		{paths.TLSKey, "tls.key", 0600, scanner.Critical, "keys"},
-		{paths.AdminMacaroon, "admin.macaroon", 0600, scanner.Critical, "access"},
-		{paths.ReadonlyMacaroon, "readonly.macaroon", 0600, scanner.High, "access"},
-		{paths.InvoiceMacaroon, "invoice.macaroon", 0600, scanner.High, "access"},
-		{paths.ChannelBackup, "channel.backup", 0600, scanner.Critical, "keys"},
-		{paths.ConfigFile, "lnd.conf", 0640, scanner.High, "access"},
+		{paths.WalletDB, "wallet.db", 0o600, scanner.Critical, "keys"},
+		{paths.TLSKey, "tls.key", 0o600, scanner.Critical, "keys"},
+		{paths.AdminMacaroon, "admin.macaroon", 0o600, scanner.Critical, "access"},
+		{paths.ReadonlyMacaroon, "readonly.macaroon", 0o600, scanner.High, "access"},
+		{paths.InvoiceMacaroon, "invoice.macaroon", 0o600, scanner.High, "access"},
+		{paths.ChannelBackup, "channel.backup", 0o600, scanner.Critical, "keys"},
+		{paths.ConfigFile, "lnd.conf", 0o640, scanner.High, "access"},
 	}
 
 	// Tor onion key if provided
@@ -36,7 +36,7 @@ func CheckFilePermissions(paths FilePaths) []scanner.Finding {
 		targets = append(targets, sensitiveFile{
 			path:     paths.TorOnionKey,
 			name:     "tor onion private key",
-			maxPerm:  0600,
+			maxPerm:  0o600,
 			severity: scanner.Critical,
 			module:   "keys",
 		})
@@ -116,7 +116,7 @@ func checkSingleFile(sf sensitiveFile) *scanner.Finding {
 // beyond what maxPerm allows. We check group and other bits.
 func isOverlyPermissive(actual, maxPerm fs.FileMode) bool {
 	// If the file allows any bits that maxPerm doesn't, it's too permissive.
-	// For example, if maxPerm is 0600 and actual is 0644, the group-read (040)
+	// For example, if maxPerm is 0o600 and actual is 0o644, the group-read (040)
 	// and other-read (004) bits exceed the maximum.
 	excess := actual & ^maxPerm
 	return excess != 0

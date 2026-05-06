@@ -39,7 +39,9 @@ func TestCheckAdminMacaroonLeaks_NoLeaks(t *testing.T) {
 func TestCheckAdminMacaroonLeaks_FindsStray(t *testing.T) {
 	tmpDir := t.TempDir()
 	strayPath := filepath.Join(tmpDir, "admin.macaroon")
-	os.WriteFile(strayPath, []byte("fake-macaroon"), 0600)
+	if err := os.WriteFile(strayPath, []byte("fake-macaroon"), 0o600); err != nil {
+		t.Fatal(err)
+	}
 
 	// Use a different dir as LND data dir so the stray is outside it
 	lndDir := t.TempDir()
@@ -58,7 +60,9 @@ func TestCheckAdminMacaroonLeaks_FindsStray(t *testing.T) {
 func TestCheckAdminMacaroonLeaks_IgnoresLndDir(t *testing.T) {
 	lndDir := t.TempDir()
 	macPath := filepath.Join(lndDir, "admin.macaroon")
-	os.WriteFile(macPath, []byte("fake-macaroon"), 0600)
+	if err := os.WriteFile(macPath, []byte("fake-macaroon"), 0o600); err != nil {
+		t.Fatal(err)
+	}
 
 	findings := checkMacaroonInDir(lndDir, lndDir)
 	if len(findings) != 0 {
@@ -68,8 +72,8 @@ func TestCheckAdminMacaroonLeaks_IgnoresLndDir(t *testing.T) {
 
 // helper to test macaroon detection in a specific directory
 func checkMacaroonInDir(searchDir, lndDataDir string) []scanner.Finding {
-	var findings []scanner.Finding
 	matches, _ := filepath.Glob(filepath.Join(searchDir, "*.macaroon"))
+	findings := make([]scanner.Finding, 0, len(matches))
 	for _, m := range matches {
 		absPath, _ := filepath.Abs(m)
 		if lndDataDir != "" {

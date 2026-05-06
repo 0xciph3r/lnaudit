@@ -1,11 +1,13 @@
 # Binaries
-lnd-hardening-toolkit
+lnaudit
 *.exe
 
 # Go
 *.test
 *.out
 vendor/
+coverage.out
+coverage.html
 
 # IDE
 .idea/

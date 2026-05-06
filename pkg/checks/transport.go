@@ -224,11 +224,7 @@ func CheckExternalIPLeak(cfg *config.LndConfig) []scanner.Finding {
 func isBoundToAllInterfaces(addr string) bool {
 	host, _, err := net.SplitHostPort(addr)
 	if err != nil {
-		// Might be just a port like ":10009"
-		if strings.HasPrefix(addr, ":") {
-			return true
-		}
-		return false
+		return strings.HasPrefix(addr, ":")
 	}
 	return host == "" || host == "0.0.0.0" || host == "::"
 }

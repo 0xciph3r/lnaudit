@@ -59,10 +59,10 @@ func TableWriterWithScore(w io.Writer, r *scanner.Report, score int, rating scan
 
 // JSONOutput holds the structured JSON output.
 type JSONOutput struct {
-	Score    int               `json:"score"`
-	Rating  string            `json:"rating"`
-	Summary map[string]int    `json:"summary"`
-	Findings []jsonFinding    `json:"findings"`
+	Score    int            `json:"score"`
+	Rating   string         `json:"rating"`
+	Summary  map[string]int `json:"summary"`
+	Findings []jsonFinding  `json:"findings"`
 }
 
 type jsonFinding struct {
@@ -157,10 +157,10 @@ func formatModuleName(mod string) string {
 	if name, ok := names[mod]; ok {
 		return name
 	}
-	return strings.Title(mod)
+	return strings.ToUpper(mod[:1]) + mod[1:]
 }
 
-func severityIcon(s scanner.Severity, color bool) string {
+func severityIcon(s scanner.Severity, _ bool) string {
 	switch s {
 	case scanner.Critical:
 		return "🔴"
@@ -210,11 +210,4 @@ func stripAnsi(s string) string {
 		result = result[:start] + result[start+end+1:]
 	}
 	return result
-}
-
-func max(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
 }

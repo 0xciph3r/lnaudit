@@ -148,10 +148,10 @@ func TestCheckPrivacySettings_ScidEnabled(t *testing.T) {
 
 func TestCheckChannelSafety_NoWatchtower(t *testing.T) {
 	cfg := &config.LndConfig{
-		WatchtowerClient: config.WatchtowerClientConfig{Active: false},
-		MaxChanSize:      16777215,
+		WatchtowerClient:   config.WatchtowerClientConfig{Active: false},
+		MaxChanSize:        16777215,
 		MaxPendingChannels: 2,
-		Bitcoin:           config.BitcoinConfig{DefaultChanConfs: 6},
+		Bitcoin:            config.BitcoinConfig{DefaultChanConfs: 6},
 	}
 	findings := CheckChannelSafety(cfg)
 	found := false
@@ -167,9 +167,9 @@ func TestCheckChannelSafety_NoWatchtower(t *testing.T) {
 
 func TestCheckChannelSafety_LowConfirmations(t *testing.T) {
 	cfg := &config.LndConfig{
-		WatchtowerClient: config.WatchtowerClientConfig{Active: true},
-		Bitcoin:          config.BitcoinConfig{DefaultChanConfs: 1},
-		MaxChanSize:      16777215,
+		WatchtowerClient:   config.WatchtowerClientConfig{Active: true},
+		Bitcoin:            config.BitcoinConfig{DefaultChanConfs: 1},
+		MaxChanSize:        16777215,
 		MaxPendingChannels: 1,
 	}
 	findings := CheckChannelSafety(cfg)
