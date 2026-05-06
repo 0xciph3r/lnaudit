@@ -1,4 +1,4 @@
-module github.com/NonsoAmadi10/lnd-hardening-toolkit
+module github.com/NonsoAmadi10/lnaudit
 
 go 1.23.2
 

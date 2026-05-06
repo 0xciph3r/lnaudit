@@ -5,7 +5,7 @@ import (
 	"io/fs"
 	"os"
 
-	"github.com/NonsoAmadi10/lnd-hardening-toolkit/pkg/scanner"
+	"github.com/NonsoAmadi10/lnaudit/pkg/scanner"
 )
 
 // sensitiveFile defines a file to check and its expected permissions.

@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/NonsoAmadi10/lnd-hardening-toolkit/pkg/config"
-	"github.com/NonsoAmadi10/lnd-hardening-toolkit/pkg/scanner"
+	"github.com/NonsoAmadi10/lnaudit/pkg/config"
+	"github.com/NonsoAmadi10/lnaudit/pkg/scanner"
 )
 
 const (

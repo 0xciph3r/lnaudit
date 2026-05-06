@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/NonsoAmadi10/lnd-hardening-toolkit/pkg/checks"
-	"github.com/NonsoAmadi10/lnd-hardening-toolkit/pkg/config"
-	"github.com/NonsoAmadi10/lnd-hardening-toolkit/pkg/lndpath"
-	"github.com/NonsoAmadi10/lnd-hardening-toolkit/pkg/report"
-	"github.com/NonsoAmadi10/lnd-hardening-toolkit/pkg/scanner"
+	"github.com/NonsoAmadi10/lnaudit/pkg/checks"
+	"github.com/NonsoAmadi10/lnaudit/pkg/config"
+	"github.com/NonsoAmadi10/lnaudit/pkg/lndpath"
+	"github.com/NonsoAmadi10/lnaudit/pkg/report"
+	"github.com/NonsoAmadi10/lnaudit/pkg/scanner"
 	"github.com/spf13/cobra"
 )
 

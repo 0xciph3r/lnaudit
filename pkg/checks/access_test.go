@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/NonsoAmadi10/lnd-hardening-toolkit/pkg/config"
-	"github.com/NonsoAmadi10/lnd-hardening-toolkit/pkg/scanner"
+	"github.com/NonsoAmadi10/lnaudit/pkg/config"
+	"github.com/NonsoAmadi10/lnaudit/pkg/scanner"
 )
 
 func TestCheckNoMacaroons_Disabled(t *testing.T) {

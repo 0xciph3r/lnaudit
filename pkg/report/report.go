@@ -6,7 +6,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/NonsoAmadi10/lnd-hardening-toolkit/pkg/scanner"
+	"github.com/NonsoAmadi10/lnaudit/pkg/scanner"
 )
 
 // TableWriter renders a human-readable table report to the given writer.

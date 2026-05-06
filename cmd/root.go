@@ -8,7 +8,7 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "lnd-hardening-toolkit",
+	Use:   "lnaudit",
 	Short: "Security scanner for LND nodes",
 	Long: `A security scanner that audits your Lightning Network Daemon configuration,
 identifies misconfigurations, and provides actionable hardening recommendations.

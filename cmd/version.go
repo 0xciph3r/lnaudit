@@ -13,9 +13,9 @@ var (
 
 var versionCmd = &cobra.Command{
 	Use:   "version",
-	Short: "Print the version of lnd-hardening-toolkit",
+	Short: "Print the version of lnaudit",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("lnd-hardening-toolkit %s (commit: %s)\n", Version, CommitSHA)
+		fmt.Printf("lnaudit %s (commit: %s)\n", Version, CommitSHA)
 	},
 }
 

@@ -1,4 +1,4 @@
-# ⚡ lnd-hardening-toolkit
+# ⚡ lnaudit
 
 A security scanner for LND node operators. Audits your Lightning node configuration, identifies misconfigurations, and provides actionable hardening recommendations.
 
@@ -25,15 +25,15 @@ This tool scans your node and tells you exactly what to fix.
 
 ```bash
 # Install
-go install github.com/NonsoAmadi10/lnd-hardening-toolkit@latest
+go install github.com/NonsoAmadi10/lnaudit@latest
 
 # Scan your node (reads lnd.conf + connects via gRPC)
-lnd-hardening-toolkit scan --config ~/.lnd/lnd.conf
+lnaudit scan --config ~/.lnd/lnd.conf
 
 # Output formats
-lnd-hardening-toolkit scan --format json    # Machine-readable
-lnd-hardening-toolkit scan --format table   # Terminal (default)
-lnd-hardening-toolkit scan --format sarif   # CI/CD integration
+lnaudit scan --format json    # Machine-readable
+lnaudit scan --format table   # Terminal (default)
+lnaudit scan --format sarif   # CI/CD integration
 ```
 
 ## Example output
@@ -69,9 +69,9 @@ Score: 62/100 — Needs hardening
 ## Architecture
 
 ```
-lnd-hardening-toolkit/
+lnaudit/
 ├── cmd/                    # CLI entrypoint
-│   └── lnd-hardening-toolkit/
+│   └── lnaudit/
 ├── pkg/
 │   ├── scanner/            # Core scanning engine
 │   ├── checks/             # Individual check implementations

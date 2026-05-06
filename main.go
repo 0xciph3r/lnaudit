@@ -1,6 +1,6 @@
 package main
 
-import "github.com/NonsoAmadi10/lnd-hardening-toolkit/cmd"
+import "github.com/NonsoAmadi10/lnaudit/cmd"
 
 func main() {
 	cmd.Execute()

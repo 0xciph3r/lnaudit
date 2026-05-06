@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/NonsoAmadi10/lnd-hardening-toolkit/pkg/scanner"
+	"github.com/NonsoAmadi10/lnaudit/pkg/scanner"
 )
 
 func skipOnWindows(t *testing.T) {

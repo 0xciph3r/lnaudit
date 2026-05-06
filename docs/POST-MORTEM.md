@@ -2,7 +2,7 @@
 
 > *"Those who cannot remember the past are condemned to repeat it."* — George Santayana
 
-This document is the **motivation** for the `lnd-hardening-toolkit`. Every scanner check we build traces back to a real-world failure that cost real people real money. We study the adversary before we build the defense.
+This document is the **motivation** for the `lnaudit`. Every scanner check we build traces back to a real-world failure that cost real people real money. We study the adversary before we build the defense.
 
 ---
 
@@ -511,7 +511,7 @@ Looking across all 10 incidents, the attacker consistently follows a pattern:
 
 ## Toolkit Check Mapping
 
-Every scanner module in `lnd-hardening-toolkit` traces back to a real-world incident:
+Every scanner module in `lnaudit` traces back to a real-world incident:
 
 | Toolkit Check | Module | Motivated By |
 |---|---|---|
