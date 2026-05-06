@@ -3,115 +3,191 @@
 [![CI](https://github.com/NonsoAmadi10/lnaudit/actions/workflows/ci.yml/badge.svg)](https://github.com/NonsoAmadi10/lnaudit/actions/workflows/ci.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/NonsoAmadi10/lnaudit)](https://goreportcard.com/report/github.com/NonsoAmadi10/lnaudit)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/NonsoAmadi10/lnaudit)](https://github.com/NonsoAmadi10/lnaudit/releases)
 
-A security scanner for LND node operators. Audits your Lightning node configuration, identifies misconfigurations, and provides actionable hardening recommendations.
+A security scanner for Lightning Network Daemon (LND) nodes. Audits your node's configuration, file permissions, and security settings, then tells you exactly what to fix.
 
-Built for anyone running LND in production — solo operators, routing nodes, exchanges, and custodians.
+Built for anyone running LND in production: solo operators, routing nodes, exchanges, and custodians.
+
+📖 **[Documentation](https://nonsoamadi10.github.io/lnaudit/)** · 🐛 [Report Bug](https://github.com/NonsoAmadi10/lnaudit/issues/new?template=bug_report.md) · 💡 [Request Feature](https://github.com/NonsoAmadi10/lnaudit/issues/new?template=feature_request.md)
 
 ## Why
 
-Running LND with default settings leaves security gaps: unencrypted keys on disk, weak Tor configurations, missing watchtower setups, overly permissive macaroons, and gossip settings that leak privacy. Most operators don't know these gaps exist until it's too late.
+Running LND with default settings leaves security gaps: overly permissive file permissions, weak TLS certificates, disabled macaroon authentication, missing watchtower configurations, and gossip settings that leak your IP address.
 
-This tool scans your node and tells you exactly what to fix.
+Most operators don't know these gaps exist until it's too late. This tool was built after studying [10 real-world Bitcoin infrastructure hacks](docs/POST-MORTEM.md) that collectively lost billions. Every check traces back to a real incident.
 
-## What it checks
+## Installation
 
-| Module | What it scans |
-|--------|--------------|
-| **Transport** | Brontide TLS config, listener exposure, connection limits |
-| **Key Management** | Wallet encryption, seed backup posture, key file permissions |
-| **Channel Safety** | Watchtower connectivity, backup freshness, breach protection |
-| **Access Control** | Macaroon permissions, RPC exposure, middleware config |
-| **Network Privacy** | Tor configuration, IP leak detection, gossip privacy settings |
-| **Node Hygiene** | Disk usage, log levels, debug flags in production |
+### Prerequisites
 
-## Quick start
+- **Go 1.23+** ([install Go](https://go.dev/doc/install))
+- **LND node** with access to its configuration directory (a running node is not required for config scanning)
+
+### From source (recommended)
 
 ```bash
-# Install
 go install github.com/NonsoAmadi10/lnaudit@latest
+```
 
-# Scan your node (reads lnd.conf + connects via gRPC)
+### From release binaries
+
+Download the latest binary for your platform from [Releases](https://github.com/NonsoAmadi10/lnaudit/releases):
+
+```bash
+# Linux (amd64)
+curl -LO https://github.com/NonsoAmadi10/lnaudit/releases/latest/download/lnaudit-linux-amd64
+chmod +x lnaudit-linux-amd64
+sudo mv lnaudit-linux-amd64 /usr/local/bin/lnaudit
+
+# macOS (Apple Silicon)
+curl -LO https://github.com/NonsoAmadi10/lnaudit/releases/latest/download/lnaudit-darwin-arm64
+chmod +x lnaudit-darwin-arm64
+sudo mv lnaudit-darwin-arm64 /usr/local/bin/lnaudit
+```
+
+### Build from source
+
+```bash
+git clone https://github.com/NonsoAmadi10/lnaudit.git
+cd lnaudit
+make build
+./bin/lnaudit version
+```
+
+## Quick Start
+
+```bash
+# Auto-detect LND config and scan
+lnaudit scan
+
+# Specify config path explicitly
 lnaudit scan --config ~/.lnd/lnd.conf
 
-# Output formats
-lnaudit scan --format json    # Machine-readable
-lnaudit scan --format table   # Terminal (default)
-lnaudit scan --format sarif   # CI/CD integration
+# JSON output for scripting / CI
+lnaudit scan --format json
+
+# Only show HIGH and CRITICAL findings
+lnaudit scan --min-severity high
+
+# Exit with code 1 if any HIGH+ finding exists (for CI/CD)
+lnaudit scan --fail-on high
 ```
 
-## Example output
+## What It Checks
+
+| Module | Checks | Examples |
+|--------|--------|----------|
+| **Transport** | TLS certificate audit, RPC bind exposure, IP leak detection | Expired/weak TLS certs, RPC bound to 0.0.0.0, clearnet IP leaked with Tor |
+| **Key Management** | File permissions on wallet.db, tls.key, macaroons, channel.backup | World-readable wallet, symlinked sensitive files |
+| **Access Control** | Macaroon authentication, stray macaroon detection, dangerous flags | `--noseedbackup`, `--noencryptwallet`, `debuglevel=trace` |
+| **Network Privacy** | Tor configuration, SCID alias, proxy settings | Missing stream isolation, V2 onion (deprecated), unencrypted onion key |
+| **Channel Safety** | Watchtower config, confirmation depth, channel limits | No watchtower, low confirmation targets, excessive max channel size |
+
+## Example Output
 
 ```
-⚡ LND Hardening Toolkit v0.1.0
+⚡ lnaudit v0.1.0
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Scanning node: 03a1b2c3...@localhost:10009
+  🔴 CRITICAL  wallet.db has permissions 0644 (too permissive)
+               → chmod 0600 /home/user/.lnd/data/chain/bitcoin/mainnet/wallet.db
 
-  CRITICAL  Tor onion key is not encrypted on disk
-            → Set --tor.encryptkey=true in lnd.conf
+  🔴 CRITICAL  noseedbackup is enabled, seed is never persisted
+               → Remove noseedbackup from lnd.conf
 
-  HIGH      No watchtower client configured
-            → Add [wtclient] section with at least one tower
+  🟡 HIGH      No watchtower client configured
+               → Add [wtclient] section with at least one tower URI
 
-  HIGH      Node announces clearnet IP alongside .onion
-            → Remove externalip= if running Tor-only
+  🟡 HIGH      RPC listener bound to all interfaces
+               → Bind rpclisten to 127.0.0.1:10009
 
-  MEDIUM    Default macaroon admin.macaroon has no timeout caveat
-            → Bake time-limited macaroons for applications
+  🟡 MEDIUM    Tor onion key is not encrypted on disk
+               → Set tor.encryptkey=true in lnd.conf
 
-  LOW       Channel backup is 48 hours old
-            → Verify backup automation is running
-
-  INFO      AssumeChannelValid is disabled (good)
+  🔵 LOW       unsafe-disconnect is enabled
+               → Remove unsafe-disconnect from lnd.conf
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Score: 62/100 — Needs hardening
-  3 critical/high · 1 medium · 1 low · 1 info
+Score: 38/100  Critical Risk
+  2 critical · 2 high · 1 medium · 1 low
+```
+
+## CLI Reference
+
+```
+Usage:
+  lnaudit scan [flags]
+
+Flags:
+      --config string         path to lnd.conf (auto-detected if not set)
+      --lnddir string         LND data directory (auto-detected if not set)
+      --format string         output format: table, json (default "table")
+      --min-severity string   minimum severity to display (default "low")
+      --fail-on string        exit 1 if findings at or above this severity (default "critical")
+      --verbose               show INFO-level findings
+      --no-color              disable colored output
+      --quiet                 only output the score
 ```
 
 ## Architecture
 
 ```
 lnaudit/
-├── cmd/                    # CLI entrypoint
-│   └── lnaudit/
+├── cmd/                    # CLI commands (scan, version)
 ├── pkg/
-│   ├── scanner/            # Core scanning engine
-│   ├── checks/             # Individual check implementations
-│   │   ├── transport.go
-│   │   ├── keys.go
-│   │   ├── channels.go
-│   │   ├── access.go
-│   │   ├── privacy.go
-│   │   └── hygiene.go
-│   ├── config/             # LND config parser
-│   ├── grpc/               # LND gRPC client
-│   └── report/             # Output formatters (table, JSON, SARIF)
-├── go.mod
-├── go.sum
-├── LICENSE
-└── README.md
+│   ├── scanner/            # Core engine: Finding, Severity, Report, scoring
+│   ├── checks/             # Security check implementations
+│   │   ├── permissions.go  # File permission auditing
+│   │   ├── transport.go    # TLS, RPC bind, IP exposure
+│   │   ├── access.go       # Macaroons, dangerous flags
+│   │   └── privacy.go      # Tor, SCID alias, channel safety
+│   ├── config/             # lnd.conf parser (INI format)
+│   ├── lndpath/            # Auto-detection of LND paths
+│   └── report/             # Output formatters (table, JSON)
+├── docs/                   # Documentation and post-mortem research
+├── Makefile                # Build, test, lint, release targets
+└── .github/                # CI workflows, issue/PR templates
 ```
 
-## Requirements
+## Scoring
 
-- Go 1.21+
-- Access to the target node's `lnd.conf` and/or gRPC endpoint
-- Read-only macaroon (`readonly.macaroon`) for live checks
+Each finding deducts points from a starting score of 100:
+
+| Severity | Deduction | Meaning |
+|----------|-----------|---------|
+| CRITICAL | -15 | Direct fund loss risk or key exposure |
+| HIGH | -10 | Significant security weakness |
+| MEDIUM | -5 | Suboptimal configuration |
+| LOW | -2 | Minor hardening opportunity |
+| INFO | 0 | Informational |
+
+| Score | Rating |
+|-------|--------|
+| 90–100 | ✅ Hardened |
+| 70–89 | 🟢 Acceptable |
+| 40–69 | 🟡 Needs Hardening |
+| 0–39 | 🔴 Critical Risk |
 
 ## Roadmap
 
-- [ ] Config-based scanning (no node connection needed)
+- [x] Config-based scanning (no running node needed)
+- [x] File permission auditing with symlink detection
+- [x] TLS certificate analysis
+- [x] Dangerous flag detection
+- [x] Tor and privacy configuration audit
+- [x] Scoring engine with severity-based ratings
 - [ ] Live node scanning via gRPC
-- [ ] CI/CD integration (GitHub Actions, SARIF output)
+- [ ] SARIF output for CI/CD integration
 - [ ] Homebrew / Docker distribution
-- [ ] Benchmarking against CIS-style hardening baselines
+- [ ] Fleet scanning (multiple nodes)
+- [ ] Baseline policy files (YAML)
 
 ## Related
 
-- [LND Deep Dive](https://nonsoamadi10.github.io/lnd-deep-dive/) — the security research behind this tool
-- [LND](https://github.com/lightningnetwork/lnd) — the Lightning Network Daemon
+- [LND Deep Dive](https://nonsoamadi10.github.io/lnd-deep-dive/) - The security research behind this tool
+- [Post-Mortem Analysis](docs/POST-MORTEM.md) - 10 Bitcoin infrastructure hacks that motivated this project
+- [LND](https://github.com/lightningnetwork/lnd) - The Lightning Network Daemon
 
 ## Contributing
 

@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>lnaudit | LND Security Scanner</title>
+    <meta name="description" content="Security auditing tool for Lightning Network Daemon (LND) nodes. Static analysis of configuration, file permissions, and network exposure.">
+    <style>
+        :root {
+            --bg: #ffffff;
+            --surface: #f6f8fa;
+            --border: #d0d7de;
+            --text: #1f2328;
+            --text-secondary: #656d76;
+            --accent: #0969da;
+            --code-bg: #f6f8fa;
+            --nav-bg: #24292f;
+            --nav-text: #ffffff;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Noto Sans, Helvetica, Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+
+        nav {
+            background: var(--nav-bg);
+            color: var(--nav-text);
+            padding: 12px 0;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        nav .nav-inner {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 0 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        nav .logo { font-weight: 700; font-size: 1.125rem; color: var(--nav-text); }
+        nav .nav-links a {
+            color: rgba(255,255,255,0.75);
+            margin-left: 24px;
+            font-size: 0.875rem;
+        }
+        nav .nav-links a:hover { color: #fff; text-decoration: none; }
+
+        .container { max-width: 960px; margin: 0 auto; padding: 0 24px; }
+        .hero {
+            padding: 64px 0 48px;
+            border-bottom: 1px solid var(--border);
+        }
+        .hero h1 { font-size: 2.25rem; font-weight: 700; margin-bottom: 12px; }
+        .hero .subtitle {
+            font-size: 1.125rem;
+            color: var(--text-secondary);
+            max-width: 700px;
+            margin-bottom: 24px;
+        }
+        .hero .badges img { margin-right: 6px; }
+        .hero .install-hint {
+            margin-top: 20px;
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 12px 16px;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 0.875rem;
+            display: inline-block;
+        }
+
+        section { padding: 48px 0; border-bottom: 1px solid var(--border); }
+        section:last-of-type { border-bottom: none; }
+        h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+        h3 { font-size: 1.125rem; font-weight: 600; margin: 24px 0 8px; }
+        h3:first-child { margin-top: 0; }
+        p { margin-bottom: 12px; }
+        ul, ol { margin: 0 0 12px 24px; }
+        li { margin-bottom: 4px; }
+
+        pre {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 16px;
+            overflow-x: auto;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 0.8125rem;
+            line-height: 1.6;
+            margin-bottom: 16px;
+        }
+        code {
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 0.875em;
+            background: var(--code-bg);
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+        pre code { background: none; padding: 0; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 16px;
+            font-size: 0.9375rem;
+        }
+        th, td {
+            padding: 8px 12px;
+            text-align: left;
+            border: 1px solid var(--border);
+        }
+        th { background: var(--surface); font-weight: 600; }
+
+        .note {
+            background: #ddf4ff;
+            border: 1px solid #54aeff;
+            border-radius: 6px;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            font-size: 0.9375rem;
+        }
+
+        .output-block {
+            background: #24292f;
+            color: #e6edf3;
+            border-radius: 6px;
+            padding: 20px;
+            font-family: 'SFMono-Regular', Consolas, monospace;
+            font-size: 0.8125rem;
+            line-height: 1.8;
+            overflow-x: auto;
+            margin-bottom: 16px;
+        }
+        .output-block .cr { color: #ff7b72; }
+        .output-block .hi { color: #e3b341; }
+        .output-block .md { color: #d29922; }
+        .output-block .lo { color: #79c0ff; }
+        .output-block .dim { color: #8b949e; }
+
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 32px 0;
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body>
+
+<nav>
+    <div class="nav-inner">
+        <span class="logo">lnaudit</span>
+        <div class="nav-links">
+            <a href="#installation">Install</a>
+            <a href="#usage">Usage</a>
+            <a href="#checks">Checks</a>
+            <a href="#scoring">Scoring</a>
+            <a href="https://github.com/NonsoAmadi10/lnaudit">GitHub</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+
+<div class="hero">
+    <h1>lnaudit</h1>
+    <p class="subtitle">
+        Security auditing tool for Lightning Network Daemon (LND) nodes.
+        Static analysis of configuration files, file permissions, TLS certificates,
+        and network exposure. No running node required.
+    </p>
+    <div class="badges">
+        <a href="https://github.com/NonsoAmadi10/lnaudit/actions/workflows/ci.yml"><img src="https://github.com/NonsoAmadi10/lnaudit/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+        <a href="https://goreportcard.com/report/github.com/NonsoAmadi10/lnaudit"><img src="https://goreportcard.com/badge/github.com/NonsoAmadi10/lnaudit" alt="Go Report Card"></a>
+        <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="MIT License">
+        <a href="https://github.com/NonsoAmadi10/lnaudit/releases"><img src="https://img.shields.io/github/v/release/NonsoAmadi10/lnaudit" alt="Release"></a>
+    </div>
+    <div class="install-hint">$ go install github.com/NonsoAmadi10/lnaudit@latest</div>
+</div>
+
+<section>
+    <h2>Overview</h2>
+    <p>
+        lnaudit performs static security analysis of LND node configurations. It reads your
+        <code>lnd.conf</code>, inspects file permissions on sensitive files (wallet, keys, macaroons),
+        validates TLS certificate properties, and checks for dangerous runtime flags.
+    </p>
+    <p>
+        The tool produces a scored report with specific remediation steps for each finding.
+        It is designed for node operators, security teams, and CI/CD pipelines.
+    </p>
+    <div class="note">
+        <strong>v0.1.0</strong> supports config-only scanning. Live node scanning via gRPC is planned for v0.2.0.
+    </div>
+</section>
+
+<section id="installation">
+    <h2>Installation</h2>
+
+    <h3>Prerequisites</h3>
+    <ul>
+        <li><strong>Go 1.23 or later</strong> (<a href="https://go.dev/doc/install">install Go</a>)</li>
+        <li>Access to the LND configuration directory on the target machine</li>
+        <li>A running LND node is <strong>not</strong> required for config-based scanning</li>
+    </ul>
+
+    <h3>Install from source</h3>
+    <pre>go install github.com/NonsoAmadi10/lnaudit@latest</pre>
+
+    <h3>Download release binary</h3>
+    <p>Pre-built binaries are available for Linux and macOS on the <a href="https://github.com/NonsoAmadi10/lnaudit/releases">Releases</a> page.</p>
+    <pre># Linux (amd64)
+curl -LO https://github.com/NonsoAmadi10/lnaudit/releases/latest/download/lnaudit-linux-amd64
+chmod +x lnaudit-linux-amd64
+sudo mv lnaudit-linux-amd64 /usr/local/bin/lnaudit
+
+# macOS (Apple Silicon)
+curl -LO https://github.com/NonsoAmadi10/lnaudit/releases/latest/download/lnaudit-darwin-arm64
+chmod +x lnaudit-darwin-arm64
+sudo mv lnaudit-darwin-arm64 /usr/local/bin/lnaudit</pre>
+
+    <h3>Build from source</h3>
+    <pre>git clone https://github.com/NonsoAmadi10/lnaudit.git
+cd lnaudit
+make build
+./bin/lnaudit version</pre>
+
+    <h3>Verify installation</h3>
+    <pre>$ lnaudit version
+lnaudit v0.1.0 (commit: abc1234)</pre>
+</section>
+
+<section id="usage">
+    <h2>Usage</h2>
+
+    <h3>Basic scan</h3>
+    <p>
+        When run without flags, lnaudit auto-detects the LND configuration directory
+        based on the current operating system and user.
+    </p>
+    <pre># Auto-detect LND config location
+lnaudit scan
+
+# Specify config path
+lnaudit scan --config /path/to/lnd.conf
+
+# Specify LND data directory
+lnaudit scan --lnddir /path/to/.lnd</pre>
+
+    <h3>Output formats</h3>
+    <pre># Human-readable table (default)
+lnaudit scan --format table
+
+# Machine-readable JSON
+lnaudit scan --format json</pre>
+
+    <h3>Filtering</h3>
+    <pre># Show only HIGH and CRITICAL findings
+lnaudit scan --min-severity high
+
+# Include informational findings
+lnaudit scan --verbose
+
+# Output only the numeric score
+lnaudit scan --quiet</pre>
+
+    <h3>CI/CD integration</h3>
+    <p>
+        Use the <code>--fail-on</code> flag to set a threshold. The process exits with code 1
+        if any finding meets or exceeds the specified severity.
+    </p>
+    <pre># Fail the pipeline on any HIGH or CRITICAL finding
+lnaudit scan --fail-on high --format json
+
+# Fail only on CRITICAL findings (default)
+lnaudit scan --fail-on critical</pre>
+
+    <h3>Command reference</h3>
+    <table>
+        <thead><tr><th>Flag</th><th>Default</th><th>Description</th></tr></thead>
+        <tbody>
+            <tr><td><code>--config</code></td><td>auto-detect</td><td>Path to lnd.conf</td></tr>
+            <tr><td><code>--lnddir</code></td><td>auto-detect</td><td>LND data directory</td></tr>
+            <tr><td><code>--format</code></td><td>table</td><td>Output format: <code>table</code>, <code>json</code></td></tr>
+            <tr><td><code>--min-severity</code></td><td>low</td><td>Minimum severity to display</td></tr>
+            <tr><td><code>--fail-on</code></td><td>critical</td><td>Exit 1 if findings at or above this level</td></tr>
+            <tr><td><code>--verbose</code></td><td>false</td><td>Include INFO-level findings</td></tr>
+            <tr><td><code>--no-color</code></td><td>false</td><td>Disable colored output</td></tr>
+            <tr><td><code>--quiet</code></td><td>false</td><td>Output only the numeric score</td></tr>
+        </tbody>
+    </table>
+
+    <h3>Path auto-detection</h3>
+    <p>lnaudit checks the following default locations based on your operating system:</p>
+    <table>
+        <thead><tr><th>Platform</th><th>Default LND directory</th></tr></thead>
+        <tbody>
+            <tr><td>Linux</td><td><code>~/.lnd</code></td></tr>
+            <tr><td>macOS</td><td><code>~/Library/Application Support/Lnd</code> (also checks <code>~/.lnd</code>)</td></tr>
+            <tr><td>Windows</td><td><code>%LOCALAPPDATA%\Lnd</code></td></tr>
+        </tbody>
+    </table>
+    <p>
+        If your <code>lnd.conf</code> specifies a custom <code>lnddir</code> or <code>datadir</code>,
+        the scanner reads that value and adjusts all file paths accordingly.
+    </p>
+</section>
+
+<section id="checks">
+    <h2>Security Checks</h2>
+    <p>
+        lnaudit v0.1.0 includes checks across five categories. Each finding includes a
+        severity level, a description of the risk, and a specific remediation command or
+        configuration change.
+    </p>
+
+    <h3>Transport Security</h3>
+    <table>
+        <thead><tr><th>Check</th><th>Severity</th><th>Description</th></tr></thead>
+        <tbody>
+            <tr><td>TLS certificate expiry</td><td>CRITICAL/MEDIUM</td><td>Detects expired certificates and certificates expiring within 30 days</td></tr>
+            <tr><td>TLS key type</td><td>MEDIUM</td><td>Flags RSA keys shorter than 2048 bits and non-ECDSA/Ed25519 key types</td></tr>
+            <tr><td>TLS signature algorithm</td><td>HIGH</td><td>Detects weak signature algorithms (SHA-1, MD5)</td></tr>
+            <tr><td>RPC bind address</td><td>HIGH</td><td>Warns when RPC or REST listeners are bound to 0.0.0.0 or ::</td></tr>
+            <tr><td>External IP with Tor</td><td>HIGH</td><td>Flags clearnet IP exposure when Tor is configured</td></tr>
+        </tbody>
+    </table>
+
+    <h3>Key Management (File Permissions)</h3>
+    <table>
+        <thead><tr><th>Check</th><th>Severity</th><th>Description</th></tr></thead>
+        <tbody>
+            <tr><td>wallet.db permissions</td><td>CRITICAL</td><td>Must be 0600 or stricter</td></tr>
+            <tr><td>tls.key permissions</td><td>CRITICAL</td><td>Must be 0600 or stricter</td></tr>
+            <tr><td>Macaroon permissions</td><td>CRITICAL/HIGH</td><td>admin.macaroon (CRITICAL), readonly/invoice (HIGH)</td></tr>
+            <tr><td>channel.backup permissions</td><td>CRITICAL</td><td>Must be 0600 or stricter</td></tr>
+            <tr><td>lnd.conf permissions</td><td>HIGH</td><td>Must be 0640 or stricter</td></tr>
+            <tr><td>Tor onion private key</td><td>CRITICAL</td><td>Must be 0600 or stricter</td></tr>
+            <tr><td>Symlink detection</td><td>HIGH</td><td>Sensitive files should not be symbolic links</td></tr>
+        </tbody>
+    </table>
+
+    <h3>Access Control</h3>
+    <table>
+        <thead><tr><th>Check</th><th>Severity</th><th>Description</th></tr></thead>
+        <tbody>
+            <tr><td>Macaroon authentication</td><td>CRITICAL</td><td>Flags <code>no-macaroons=true</code> which disables all authentication</td></tr>
+            <tr><td>Stray macaroon files</td><td>CRITICAL/HIGH</td><td>Detects macaroon files outside the LND data directory</td></tr>
+            <tr><td>noseedbackup</td><td>CRITICAL</td><td>Wallet seed is never persisted to disk</td></tr>
+            <tr><td>noencryptwallet</td><td>CRITICAL</td><td>Wallet is stored unencrypted</td></tr>
+            <tr><td>Debug log level</td><td>HIGH</td><td>Flags <code>debuglevel=trace</code> or <code>debug</code> in production</td></tr>
+            <tr><td>debughtlc</td><td>MEDIUM</td><td>Debug HTLC mode enabled</td></tr>
+            <tr><td>trickledelay=0</td><td>MEDIUM</td><td>Disabling trickle delay can aid timing analysis</td></tr>
+            <tr><td>unsafe-disconnect</td><td>LOW</td><td>Allows unclean peer disconnections</td></tr>
+        </tbody>
+    </table>
+
+    <h3>Network Privacy</h3>
+    <table>
+        <thead><tr><th>Check</th><th>Severity</th><th>Description</th></tr></thead>
+        <tbody>
+            <tr><td>Tor proxy bypass</td><td>HIGH</td><td>Flags <code>tor.skip-proxy-for-clearnet-targets</code></td></tr>
+            <tr><td>Tor stream isolation</td><td>MEDIUM</td><td>Recommends enabling <code>tor.streamisolation</code></td></tr>
+            <tr><td>V2 onion service</td><td>HIGH</td><td>V2 onion addresses are deprecated and insecure</td></tr>
+            <tr><td>Onion key encryption</td><td>MEDIUM</td><td>Tor private key should be encrypted at rest</td></tr>
+            <tr><td>SCID alias</td><td>MEDIUM</td><td>Short Channel ID aliases improve privacy</td></tr>
+        </tbody>
+    </table>
+
+    <h3>Channel Safety</h3>
+    <table>
+        <thead><tr><th>Check</th><th>Severity</th><th>Description</th></tr></thead>
+        <tbody>
+            <tr><td>Watchtower client</td><td>HIGH</td><td>No watchtower configuration detected</td></tr>
+            <tr><td>Confirmation depth</td><td>MEDIUM</td><td>Flags funding confirmation target below 3 blocks</td></tr>
+            <tr><td>Max channel size</td><td>MEDIUM</td><td>Warns on channels exceeding 0.1 BTC without wumbo</td></tr>
+            <tr><td>Max pending channels</td><td>LOW</td><td>Flags more than 10 pending channels allowed</td></tr>
+        </tbody>
+    </table>
+</section>
+
+<section>
+    <h2>Example Output</h2>
+
+    <h3>Table format (default)</h3>
+    <div class="output-block">
+<span class="dim">$ lnaudit scan --config ~/.lnd/lnd.conf</span>
+
+lnaudit v0.1.0
+
+  <span class="cr">CRITICAL</span>  wallet.db has permissions 0644 (too permissive)
+            <span class="dim">chmod 0600 ~/.lnd/data/chain/bitcoin/mainnet/wallet.db</span>
+
+  <span class="cr">CRITICAL</span>  noseedbackup is enabled
+            <span class="dim">Remove noseedbackup from [Application Options] in lnd.conf</span>
+
+  <span class="hi">HIGH</span>      No watchtower client configured
+            <span class="dim">Add [wtclient] section with at least one tower URI</span>
+
+  <span class="hi">HIGH</span>      RPC listener bound to all interfaces (0.0.0.0:10009)
+            <span class="dim">Bind rpclisten to 127.0.0.1:10009</span>
+
+  <span class="md">MEDIUM</span>    Tor onion key is not encrypted on disk
+            <span class="dim">Set tor.encryptkey=true in lnd.conf</span>
+
+Score: 38/100  <span class="cr">Critical Risk</span>
+  2 critical  2 high  1 medium
+    </div>
+
+    <h3>JSON format</h3>
+    <pre>{
+  "score": 38,
+  "rating": "critical_risk",
+  "summary": {
+    "critical": 2,
+    "high": 2,
+    "medium": 1,
+    "low": 0,
+    "info": 0
+  },
+  "findings": [
+    {
+      "id": "PERM-wallet.db",
+      "module": "keys",
+      "severity": "CRITICAL",
+      "title": "wallet.db has permissions 0644 (too permissive)",
+      "description": "wallet.db at ~/.lnd/data/.../wallet.db has permissions 0644. Maximum recommended: 0600.",
+      "remediation": "chmod 0600 ~/.lnd/data/chain/bitcoin/mainnet/wallet.db"
+    }
+  ]
+}</pre>
+</section>
+
+<section id="scoring">
+    <h2>Scoring Model</h2>
+    <p>
+        lnaudit computes a security score starting at 100 and deducting points for each
+        finding based on its severity. The score has a floor of 0.
+    </p>
+    <table>
+        <thead><tr><th>Severity</th><th>Point deduction</th><th>Use case</th></tr></thead>
+        <tbody>
+            <tr><td>CRITICAL</td><td>-15</td><td>Direct fund loss risk, credential exposure</td></tr>
+            <tr><td>HIGH</td><td>-10</td><td>Significant security weakness</td></tr>
+            <tr><td>MEDIUM</td><td>-5</td><td>Suboptimal configuration</td></tr>
+            <tr><td>LOW</td><td>-2</td><td>Minor hardening opportunity</td></tr>
+            <tr><td>INFO</td><td>0</td><td>Informational, no deduction</td></tr>
+        </tbody>
+    </table>
+
+    <h3>Rating thresholds</h3>
+    <table>
+        <thead><tr><th>Score range</th><th>Rating</th></tr></thead>
+        <tbody>
+            <tr><td>90 to 100</td><td>Hardened</td></tr>
+            <tr><td>70 to 89</td><td>Acceptable</td></tr>
+            <tr><td>40 to 69</td><td>Needs Hardening</td></tr>
+            <tr><td>0 to 39</td><td>Critical Risk</td></tr>
+        </tbody>
+    </table>
+
+    <div class="note">
+        Display filtering (<code>--min-severity</code>, <code>--verbose</code>) affects which findings
+        are shown in the output. The score is always computed against the full unfiltered report.
+    </div>
+</section>
+
+<section>
+    <h2>Architecture</h2>
+    <pre>lnaudit/
+├── cmd/                    # CLI commands (scan, version)
+├── pkg/
+│   ├── scanner/            # Core types: Finding, Severity, Report, scoring
+│   ├── checks/             # Security check implementations
+│   │   ├── permissions.go  # File permission auditing, symlink detection
+│   │   ├── transport.go    # TLS certificate, RPC bind, IP exposure
+│   │   ├── access.go       # Macaroon auth, dangerous flags
+│   │   └── privacy.go      # Tor configuration, channel safety
+│   ├── config/             # lnd.conf parser (INI format, multi-value keys)
+│   ├── lndpath/            # Platform-specific LND path detection
+│   └── report/             # Output formatters (table, JSON)
+├── docs/                   # Documentation and research
+│   └── POST-MORTEM.md      # 10 Bitcoin infrastructure incident analyses
+├── Makefile                # build, test, lint, coverage, release
+└── .github/
+    └── workflows/ci.yml    # CI pipeline (Go 1.23/1.24, lint, build)</pre>
+</section>
+
+<section>
+    <h2>Development</h2>
+
+    <h3>Prerequisites</h3>
+    <ul>
+        <li>Go 1.23 or later</li>
+        <li>golangci-lint (<code>make dev-deps</code> installs it)</li>
+    </ul>
+
+    <h3>Build and test</h3>
+    <pre># Install development tools
+make dev-deps
+
+# Run all quality checks (format, vet, lint, test)
+make check
+
+# Build binary
+make build
+
+# Run tests with race detector
+make test-race
+
+# Generate coverage report
+make coverage
+
+# Cross-compile release binaries
+make release</pre>
+
+    <h3>Adding a new check</h3>
+    <ol>
+        <li>Add your check function to the appropriate file in <code>pkg/checks/</code></li>
+        <li>Return <code>[]scanner.Finding</code> with severity, title, description, and remediation</li>
+        <li>Wire the check into <code>cmd/scan.go</code> in the <code>runScan</code> function</li>
+        <li>Write tests in the corresponding <code>_test.go</code> file</li>
+        <li>Run <code>make check</code> to validate</li>
+    </ol>
+    <p>See <a href="https://github.com/NonsoAmadi10/lnaudit/blob/main/CONTRIBUTING.md">CONTRIBUTING.md</a> for full guidelines.</p>
+</section>
+
+<section>
+    <h2>Roadmap</h2>
+    <table>
+        <thead><tr><th>Version</th><th>Feature</th><th>Status</th></tr></thead>
+        <tbody>
+            <tr><td>v0.1.0</td><td>Config-based scanning with scored reports</td><td>Released</td></tr>
+            <tr><td>v0.1.0</td><td>File permission auditing with symlink detection</td><td>Released</td></tr>
+            <tr><td>v0.1.0</td><td>TLS, Tor, macaroon, and dangerous flag checks</td><td>Released</td></tr>
+            <tr><td>v0.2.0</td><td>Live node scanning via gRPC</td><td>In progress</td></tr>
+            <tr><td>v0.2.0</td><td>SARIF output format</td><td>Planned</td></tr>
+            <tr><td>Future</td><td>Homebrew and Docker distribution</td><td>Planned</td></tr>
+            <tr><td>Future</td><td>Fleet scanning (multiple nodes)</td><td>Planned</td></tr>
+            <tr><td>Future</td><td>Baseline policy files (YAML)</td><td>Planned</td></tr>
+        </tbody>
+    </table>
+</section>
+
+</div>
+
+<footer>
+    <p>
+        lnaudit is open source software under the <a href="https://github.com/NonsoAmadi10/lnaudit/blob/main/LICENSE">MIT License</a>.
+    </p>
+    <p>
+        <a href="https://github.com/NonsoAmadi10/lnaudit">Source</a> &middot;
+        <a href="https://github.com/NonsoAmadi10/lnaudit/blob/main/CONTRIBUTING.md">Contributing</a> &middot;
+        <a href="https://github.com/NonsoAmadi10/lnaudit/blob/main/SECURITY.md">Security Policy</a> &middot;
+        <a href="https://github.com/NonsoAmadi10/lnaudit/blob/main/docs/POST-MORTEM.md">Research</a>
+    </p>
+</footer>
+
+</body>
+</html>
