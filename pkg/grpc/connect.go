@@ -109,7 +109,7 @@ func (c *realClient) PendingChannels() ([]PendingForceClose, error) {
 		return nil, fmt.Errorf("PendingChannels: %w", err)
 	}
 
-	var pending []PendingForceClose
+	pending := make([]PendingForceClose, 0, len(resp.PendingForceClosingChannels))
 	for _, fc := range resp.PendingForceClosingChannels {
 		pending = append(pending, PendingForceClose{
 			ChannelPoint:     fc.Channel.ChannelPoint,

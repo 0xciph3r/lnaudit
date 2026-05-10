@@ -1,43 +1,53 @@
-run:
-  timeout: 5m
-
+version: "2"
 linters:
   enable:
     - bodyclose
-    - errcheck
     - errorlint
     - gocritic
-    - gofmt
-    - goimports
     - gosec
-    - govet
-    - ineffassign
     - misspell
     - prealloc
     - revive
-    - staticcheck
     - unconvert
     - unparam
-    - unused
-
+  settings:
+    gocritic:
+      disabled-checks:
+        - hugeParam
+        - filepathJoin
+      enabled-tags:
+        - diagnostic
+        - performance
+        - style
+    gosec:
+      excludes:
+        - G304
+    revive:
+      rules:
+        - name: exported
+          arguments:
+            - checkPrivateReceivers
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
 issues:
   max-issues-per-linter: 50
   max-same-issues: 5
-
-linters-settings:
-  revive:
-    rules:
-      - name: exported
-        arguments:
-          - "checkPrivateReceivers"
-  gosec:
-    excludes:
-      - G304 # file path from variable — we intentionally read user-supplied paths
-  gocritic:
-    enabled-tags:
-      - diagnostic
-      - performance
-      - style
-    disabled-checks:
-      - hugeParam
-      - filepathJoin
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

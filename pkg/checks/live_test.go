@@ -328,9 +328,9 @@ func TestCheckLargeLocalBalance_HighExposure(t *testing.T) {
 
 func TestParseVersion(t *testing.T) {
 	tests := []struct {
-		input         string
+		input               string
 		major, minor, patch int
-		ok            bool
+		ok                  bool
 	}{
 		{"0.19.1-beta commit=v0.19.1-beta", 0, 19, 1, true},
 		{"0.17.0-beta", 0, 17, 0, true},
@@ -342,14 +342,14 @@ func TestParseVersion(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		maj, min, pat, ok := parseVersion(tt.input)
+		maj, mnr, pat, ok := parseVersion(tt.input)
 		if ok != tt.ok {
 			t.Errorf("parseVersion(%q): ok=%v, want %v", tt.input, ok, tt.ok)
 			continue
 		}
-		if ok && (maj != tt.major || min != tt.minor || pat != tt.patch) {
+		if ok && (maj != tt.major || mnr != tt.minor || pat != tt.patch) {
 			t.Errorf("parseVersion(%q) = %d.%d.%d, want %d.%d.%d",
-				tt.input, maj, min, pat, tt.major, tt.minor, tt.patch)
+				tt.input, maj, mnr, pat, tt.major, tt.minor, tt.patch)
 		}
 	}
 }
