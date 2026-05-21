@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lnaudit Docs</title>
+  <meta name="description" content="Security Auditing Documentation for Lnaudit, an Enterprise-Grade Scanner for Lightning Network Daemon (LND) Nodes." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div id="root"></div>
+  <noscript>
+    <style>body{font-family:Inter,sans-serif;max-width:720px;margin:40px auto;padding:0 20px;color:#191414}h1{margin-bottom:12px}</style>
+    <h1>Lnaudit Docs</h1>
+    <p>JavaScript is required to render the documentation. Visit the <a href="https://github.com/NonsoAmadi10/lnaudit">GitHub repository</a> for the README.</p>
+  </noscript>
+
+  <script type="module">
+    import React from "https://esm.sh/react@18.3.1";
+    import { createRoot } from "https://esm.sh/react-dom@18.3.1/client";
+    import htm from "https://esm.sh/htm@3.1.1";
+    import {
+      ChakraProvider, extendTheme,
+      Box, Flex, Stack, HStack, VStack,
+      Heading, Text, Link, Badge, Button,
+      Grid, GridItem,
+      Table, Thead, Tbody, Tr, Th, Td, TableContainer,
+      ListItem, UnorderedList, OrderedList,
+      Code, Divider
+    } from "https://esm.sh/@chakra-ui/react@2.10.2?deps=react@18.3.1,react-dom@18.3.1";
+
+    const html = htm.bind(React.createElement);
+
+    /* ── Palette ────────────────────────────────────────────── */
+    const C = {
+      ivory:      "#FFFFF0",
+      pink:       "#FF6B9D",
+      pinkSoft:   "#FFF0F5",
+      pinkDeep:   "#E8457C",
+      grey:       "#3B3B3B",
+      greyDark:   "#1E1E1E",
+      greyMid:    "#535353",
+      greyLight:  "#B3B3B3",
+      greySurface:"#282828",
+      surface:    "#FFFFFF",
+      line:       "#E8E8E8",
+      ink:        "#191414",
+    };
+
+    const theme = extendTheme({
+      styles: {
+        global: {
+          "html": { scrollBehavior: "smooth" },
+          "body": { bg: C.ivory, color: C.ink, lineHeight: "tall" },
+        },
+      },
+      fonts: {
+        heading: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        body:    "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        mono:    "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+      },
+    });
+
+    /* ── Navigation ─────────────────────────────────────────── */
+    const NAV = [
+      ["Overview",        "#overview"],
+      ["Installation",    "#installation"],
+      ["Usage",           "#usage"],
+      ["Live Scanning",   "#live-scanning"],
+      ["Security Checks", "#checks"],
+      ["Output Examples", "#output"],
+      ["Scoring Model",   "#scoring"],
+      ["Architecture",    "#architecture"],
+      ["Development",     "#development"],
+      ["Roadmap",         "#roadmap"],
+    ];
+
+    /* ── Components ─────────────────────────────────────────── */
+    const CodeBlock = ({ children }) => html`
+      <${Box}
+        as="pre"
+        bg=${C.greyDark}
+        color="#E2E8F0"
+        borderRadius="8px"
+        p="16px 18px"
+        overflowX="auto"
+        fontSize="13px"
+        fontFamily="mono"
+        lineHeight="1.7"
+        my="10px"
+        whiteSpace="pre-wrap"
+        wordBreak="break-word"
+      >${children}</${Box}>
+    `;
+
+    const Section = ({ id, title, children }) => html`
+      <${Box}
+        as="section"
+        id=${id}
+        bg=${C.surface}
+        borderRadius="8px"
+        p=${["18px", "22px", "26px"]}
+        mb="12px"
+        boxShadow="0 1px 3px rgba(0,0,0,0.06)"
+      >
+        <${Heading}
+          as="h2"
+          size="lg"
+          color=${C.ink}
+          mb="10px"
+          pb="8px"
+          borderBottom="2px solid"
+          borderColor=${C.pink}
+        >
+          ${title}
+        </${Heading}>
+        ${children}
+      </${Box}>
+    `;
+
+    const SideLink = ({ href, children }) => html`
+      <${Link}
+        href=${href}
+        display="block"
+        px="12px"
+        py="8px"
+        borderRadius="6px"
+        fontSize="0.88rem"
+        fontWeight="500"
+        color=${C.greyLight}
+        _hover=${{ bg: C.grey, color: "#FFFFFF", textDecoration: "none" }}
+        transition="all 0.12s"
+      >${children}</${Link}>
+    `;
+
+    /* ── Logo ───────────────────────────────────────────────── */
+    const Logo = () => html`
+      <${HStack} spacing="10px">
+        <${Box}
+          w="34px" h="34px"
+          borderRadius="50%"
+          bg=${C.pink}
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+          flexShrink="0"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M12 2L4 6.5V12C4 17 7.4 21.2 12 22.4C16.6 21.2 20 17 20 12V6.5L12 2Z" fill="#FFFFFF" opacity="0.95"/>
+            <path d="M13.2 7H10.2L8.6 13H11L9.8 18L15.8 11H12.6L14.2 7H13.2Z" fill=${C.greyDark}/>
+          </svg>
+        </${Box}>
+        <${VStack} align="start" spacing="0">
+          <${Text} fontWeight="800" fontSize="1rem" color="#FFFFFF" letterSpacing="-0.3px">
+            Lnaudit
+          </${Text}>
+          <${Text} fontSize="0.65rem" fontWeight="600" color=${C.greyLight} letterSpacing="0.08em" textTransform="uppercase">
+            Documentation
+          </${Text}>
+        </${VStack}>
+      </${HStack}>
+    `;
+
+    /* ── App ────────────────────────────────────────────────── */
+    const App = () => html`
+      <${Grid}
+        minH="100vh"
+        templateColumns=${["1fr", "1fr", "240px minmax(0, 1fr)"]}
+      >
+        <!-- Dark Sidebar -->
+        <${GridItem} display=${["none", "none", "block"]}>
+          <${Box}
+            position="fixed"
+            top="0"
+            left="0"
+            w="240px"
+            h="100vh"
+            bg=${C.greyDark}
+            overflowY="auto"
+            p="20px 12px"
+          >
+            <${Box} mb="24px" px="4px">
+              <${Logo} />
+            </${Box}>
+            <${VStack} align="stretch" spacing="1px">
+              ${NAV.map(([label, href]) => html`
+                <${SideLink} key=${href} href=${href}>${label}</${SideLink}>
+              `)}
+            </${VStack}>
+            <${Divider} borderColor=${C.grey} my="16px" />
+            <${VStack} align="stretch" spacing="1px">
+              <${SideLink} href="https://github.com/NonsoAmadi10/lnaudit/releases">Releases</${SideLink}>
+              <${SideLink} href="https://github.com/NonsoAmadi10/lnaudit">GitHub</${SideLink}>
+            </${VStack}>
+          </${Box}>
+        </${GridItem}>
+
+        <!-- Mobile Header -->
+        <${Box}
+          display=${["block", "block", "none"]}
+          position="sticky"
+          top="0"
+          zIndex="20"
+          bg=${C.greyDark}
+          px="16px"
+          py="10px"
+        >
+          <${Flex} align="center" justify="space-between">
+            <${Logo} />
+            <${Button}
+              as="a"
+              href="https://github.com/NonsoAmadi10/lnaudit"
+              size="sm"
+              bg=${C.pink}
+              color="white"
+              _hover=${{ bg: C.pinkDeep }}
+              fontWeight="600"
+            >GitHub</${Button}>
+          </${Flex}>
+        </${Box}>
+
+        <!-- Main Content -->
+        <${GridItem}>
+          <${Box}
+            maxW="860px"
+            mx="auto"
+            px=${["16px", "20px", "32px"]}
+            py="24px"
+          >
+            <${Stack} spacing="12px">
+
+              <!-- Hero -->
+              <${Box}
+                id="overview"
+                bg=${C.surface}
+                borderRadius="8px"
+                p=${["20px", "26px", "32px"]}
+                boxShadow="0 1px 3px rgba(0,0,0,0.06)"
+              >
+                <${Badge}
+                  bg=${C.pinkSoft}
+                  color=${C.pinkDeep}
+                  px="10px"
+                  py="3px"
+                  borderRadius="full"
+                  fontWeight="700"
+                  fontSize="0.7rem"
+                  letterSpacing="0.05em"
+                >
+                  ENTERPRISE SECURITY TOOLING
+                </${Badge}>
+
+                <${Heading}
+                  as="h1"
+                  fontSize=${["1.7rem", "2rem", "2.3rem"]}
+                  lineHeight="1.15"
+                  mt="12px"
+                  mb="12px"
+                  color=${C.ink}
+                  fontWeight="800"
+                >
+                  Lnaudit: Security Auditing for Lightning Nodes
+                </${Heading}>
+
+                <${Text} color=${C.greyMid} fontSize="0.98rem" maxW="720px" lineHeight="1.7">
+                  Lnaudit performs configuration-level security auditing for Lightning Network Daemon (LND) nodes.
+                  It inspects sensitive file permissions, transport layer exposure, API binding posture, Tor privacy
+                  settings, and high-risk operational flags. Each scan produces a scored report with specific
+                  remediation guidance for every finding.
+                </${Text}>
+
+                <${Grid}
+                  templateColumns=${["1fr", "repeat(3, 1fr)"]}
+                  gap="8px"
+                  mt="16px"
+                >
+                  ${[
+                    ["Current Release", "v0.1.0"],
+                    ["Scan Scope", "Configuration and File System"],
+                    ["Deployment", "CLI, CI/CD, GitHub Actions"],
+                  ].map(([label, value]) => html`
+                    <${Box}
+                      key=${label}
+                      bg=${C.ivory}
+                      borderRadius="6px"
+                      p="10px 12px"
+                      border="1px solid"
+                      borderColor=${C.line}
+                    >
+                      <${Text} fontSize="0.68rem" textTransform="uppercase" fontWeight="700" letterSpacing="0.06em" color=${C.greyMid}>${label}</${Text}>
+                      <${Text} fontWeight="700" color=${C.ink} mt="2px" fontSize="0.9rem">${value}</${Text}>
+                    </${Box}>
+                  `)}
+                </${Grid}>
+
+                <${HStack} spacing="8px" mt="14px" flexWrap="wrap">
+                  <a href="https://github.com/NonsoAmadi10/lnaudit/actions/workflows/ci.yml"><img src="https://github.com/NonsoAmadi10/lnaudit/actions/workflows/ci.yml/badge.svg" alt="CI" height="20" /></a>
+                  <a href="https://goreportcard.com/report/github.com/NonsoAmadi10/lnaudit"><img src="https://goreportcard.com/badge/github.com/NonsoAmadi10/lnaudit" alt="Go Report Card" height="20" /></a>
+                  <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="MIT License" height="20" />
+                  <a href="https://github.com/NonsoAmadi10/lnaudit/releases"><img src="https://img.shields.io/github/v/release/NonsoAmadi10/lnaudit" alt="Release" height="20" /></a>
+                </${HStack}>
+
+                <${Box} mt="14px" bg=${C.pinkSoft} borderLeft="3px solid" borderColor=${C.pink} borderRadius="4px" p="10px 14px">
+                  <${Text} fontSize="0.88rem" color=${C.pinkDeep} fontWeight="500">
+                    v0.1.0 provides configuration-based hardening checks. Live node assessment via gRPC is planned for v0.2.0.
+                  </${Text}>
+                </${Box}>
+              </${Box}>
+
+              <!-- Installation -->
+              <${Section} id="installation" title="Installation">
+                <${Text} color=${C.greyMid}>Choose an installation method based on your deployment requirements.</${Text}>
+
+                <${Heading} as="h3" size="sm" mt="14px" mb="6px" color=${C.ink}>Prerequisites</${Heading}>
+                <${UnorderedList} color=${C.greyMid} spacing="3px" pl="4px">
+                  <${ListItem}>Go 1.23 or later (<${Link} href="https://go.dev/doc/install" color=${C.pink} fontWeight="600">Install Go</${Link}>)</${ListItem}>
+                  <${ListItem}>Read access to the LND configuration directory on the target host</${ListItem}>
+                  <${ListItem}>A running LND process is <strong>not</strong> required for configuration-only scans</${ListItem}>
+                </${UnorderedList}>
+
+                <${Heading} as="h3" size="sm" mt="16px" mb="6px" color=${C.ink}>Install from Source</${Heading}>
+                <${CodeBlock}>go install github.com/NonsoAmadi10/lnaudit@latest</${CodeBlock}>
+
+                <${Heading} as="h3" size="sm" mt="16px" mb="6px" color=${C.ink}>Download Release Binary</${Heading}>
+                <${CodeBlock}>${`# Linux (amd64)
+curl -LO https://github.com/NonsoAmadi10/lnaudit/releases/latest/download/lnaudit-linux-amd64
+chmod +x lnaudit-linux-amd64
+sudo mv lnaudit-linux-amd64 /usr/local/bin/lnaudit
+
+# macOS (Apple Silicon)
+curl -LO https://github.com/NonsoAmadi10/lnaudit/releases/latest/download/lnaudit-darwin-arm64
+chmod +x lnaudit-darwin-arm64
+sudo mv lnaudit-darwin-arm64 /usr/local/bin/lnaudit`}</${CodeBlock}>
+
+                <${Heading} as="h3" size="sm" mt="16px" mb="6px" color=${C.ink}>Build from Source</${Heading}>
+                <${CodeBlock}>${`git clone https://github.com/NonsoAmadi10/lnaudit.git
+cd lnaudit
+make build
+./bin/lnaudit version`}</${CodeBlock}>
+
+                <${Heading} as="h3" size="sm" mt="16px" mb="6px" color=${C.ink}>Verify Installation</${Heading}>
+                <${CodeBlock}>${`$ lnaudit version
+lnaudit v0.1.0 (commit: abc1234)`}</${CodeBlock}>
+              </${Section}>
+
+              <!-- Usage -->
+              <${Section} id="usage" title="Usage">
+                <${Heading} as="h3" size="sm" mb="6px" color=${C.ink}>Running Scans</${Heading}>
+                <${CodeBlock}>${`# Auto-detect LND path
+lnaudit scan
+
+# Specify configuration file
+lnaudit scan --config /path/to/lnd.conf
+
+# Specify LND data directory
+lnaudit scan --lnddir /path/to/.lnd`}</${CodeBlock}>
+
+                <${Heading} as="h3" size="sm" mt="16px" mb="6px" color=${C.ink}>Output and Filtering</${Heading}>
+                <${CodeBlock}>${`# Table output (default)
+lnaudit scan --format table
+
+# JSON output for tooling integration
+lnaudit scan --format json
+
+# Show only HIGH and CRITICAL findings
+lnaudit scan --min-severity high
+
+# Include INFO-level findings
+lnaudit scan --verbose
+
+# Output only the numeric score
+lnaudit scan --quiet`}</${CodeBlock}>
+
+                <${Heading} as="h3" size="sm" mt="16px" mb="6px" color=${C.ink}>CI/CD Thresholding</${Heading}>
+                <${Text} color=${C.greyMid} mb="6px">
+                  Use <${Code} bg=${C.pinkSoft} color=${C.pinkDeep}>--fail-on</${Code}> to gate pipelines.
+                  The process exits with code 1 when any finding meets or exceeds the threshold.
+                </${Text}>
+                <${CodeBlock}>${`# Fail on HIGH or CRITICAL findings
+lnaudit scan --fail-on high --format json
+
+# Fail only on CRITICAL findings (default)
+lnaudit scan --fail-on critical`}</${CodeBlock}>
+
+                <${Heading} as="h3" size="sm" mt="16px" mb="8px" color=${C.ink}>Command Reference</${Heading}>
+                <${TableContainer}>
+                  <${Table} size="sm" variant="simple">
+                    <${Thead} bg=${C.greyDark}>
+                      <${Tr}><${Th} color="#FFF">Flag</${Th}><${Th} color="#FFF">Default</${Th}><${Th} color="#FFF">Description</${Th}></${Tr}>
+                    </${Thead}>
+                    <${Tbody}>
+                      <${Tr}><${Td}><${Code} bg=${C.pinkSoft} color=${C.pinkDeep}>--config</${Code}></${Td}><${Td}>Auto-detect</${Td}><${Td}>Path to lnd.conf</${Td}></${Tr}>
+                      <${Tr}><${Td}><${Code} bg=${C.pinkSoft} color=${C.pinkDeep}>--lnddir</${Code}></${Td}><${Td}>Auto-detect</${Td}><${Td}>LND data directory</${Td}></${Tr}>
+                      <${Tr}><${Td}><${Code} bg=${C.pinkSoft} color=${C.pinkDeep}>--connect</${Code}></${Td}><${Td}>(none)</${Td}><${Td}>gRPC address of running LND node</${Td}></${Tr}>
+                      <${Tr}><${Td}><${Code} bg=${C.pinkSoft} color=${C.pinkDeep}>--macaroon</${Code}></${Td}><${Td}>Auto-detect</${Td}><${Td}>Path to admin.macaroon</${Td}></${Tr}>
+                      <${Tr}><${Td}><${Code} bg=${C.pinkSoft} color=${C.pinkDeep}>--tlscert</${Code}></${Td}><${Td}>Auto-detect</${Td}><${Td}>Path to tls.cert for gRPC</${Td}></${Tr}>
+                      <${Tr}><${Td}><${Code} bg=${C.pinkSoft} color=${C.pinkDeep}>--format</${Code}></${Td}><${Td}>table</${Td}><${Td}><${Code}>table</${Code}> or <${Code}>json</${Code}></${Td}></${Tr}>
+                      <${Tr}><${Td}><${Code} bg=${C.pinkSoft} color=${C.pinkDeep}>--min-severity</${Code}></${Td}><${Td}>low</${Td}><${Td}>Minimum severity to display</${Td}></${Tr}>
+                      <${Tr}><${Td}><${Code} bg=${C.pinkSoft} color=${C.pinkDeep}>--fail-on</${Code}></${Td}><${Td}>critical</${Td}><${Td}>Exit 1 at or above this severity</${Td}></${Tr}>
+                      <${Tr}><${Td}><${Code} bg=${C.pinkSoft} color=${C.pinkDeep}>--verbose</${Code}></${Td}><${Td}>false</${Td}><${Td}>Include INFO-level findings</${Td}></${Tr}>
+                      <${Tr}><${Td}><${Code} bg=${C.pinkSoft} color=${C.pinkDeep}>--no-color</${Code}></${Td}><${Td}>false</${Td}><${Td}>Disable colorized output</${Td}></${Tr}>
+                      <${Tr}><${Td}><${Code} bg=${C.pinkSoft} color=${C.pinkDeep}>--quiet</${Code}></${Td}><${Td}>false</${Td}><${Td}>Output only the numeric score</${Td}></${Tr}>
+                    </${Tbody}>
+                  </${Table}>
+                </${TableContainer}>
+
+                <${Heading} as="h3" size="sm" mt="16px" mb="8px" color=${C.ink}>Path Auto-Detection</${Heading}>
+                <${Text} color=${C.greyMid} mb="6px">Lnaudit locates the LND directory automatically based on operating system:</${Text}>
+                <${TableContainer}>
+                  <${Table} size="sm" variant="simple">
+                    <${Thead} bg=${C.greyDark}>
+                      <${Tr}><${Th} color="#FFF">Platform</${Th}><${Th} color="#FFF">Default Path</${Th}></${Tr}>
+                    </${Thead}>
+                    <${Tbody}>
+                      <${Tr}><${Td}>Linux</${Td}><${Td}><${Code} bg=${C.pinkSoft}>~/.lnd</${Code}></${Td}></${Tr}>
+                      <${Tr}><${Td}>macOS</${Td}><${Td}><${Code} bg=${C.pinkSoft}>~/Library/Application Support/Lnd</${Code}></${Td}></${Tr}>
+                      <${Tr}><${Td}>Windows</${Td}><${Td}><${Code} bg=${C.pinkSoft}>%LOCALAPPDATA%\\Lnd</${Code}></${Td}></${Tr}>
+                    </${Tbody}>
+                  </${Table}>
+                </${TableContainer}>
+              </${Section}>
+
+              <!-- Live Scanning -->
+              <${Section} id="live-scanning" title="Live Scanning">
+                <${Text} color=${C.greyMid} mb="10px">
+                  When the <${Code} bg=${C.pinkSoft} color=${C.pinkDeep}>--connect</${Code}> flag is provided, Lnaudit
+                  connects to a running LND node via gRPC to assess its runtime security posture.
+                  Config-based checks still run if <${Code} bg=${C.pinkSoft} color=${C.pinkDeep}>lnd.conf</${Code}> is available.
+                </${Text}>
+
+                <${Heading} as="h3" size="sm" mb="6px" color=${C.ink}>Basic Live Scan</${Heading}>
+                <${CodeBlock}>${`# Connect to a local LND node (TLS cert and macaroon auto-detected)
+lnaudit scan --connect localhost:10009
+
+# Specify credential paths explicitly
+lnaudit scan --connect localhost:10009 \\
+  --tlscert ~/.lnd/tls.cert \\
+  --macaroon ~/.lnd/data/chain/bitcoin/mainnet/admin.macaroon
+
+# Live scan with config checks combined
+lnaudit scan --connect localhost:10009 --config ~/.lnd/lnd.conf
+
+# Live-only mode (no lnd.conf required)
+lnaudit scan --connect mynode.local:10009 \\
+  --tlscert /path/to/tls.cert \\
+  --macaroon /path/to/admin.macaroon`}</${CodeBlock}>
+
+                <${Heading} as="h3" size="sm" mt="16px" mb="8px" color=${C.ink}>Live Scan Flags</${Heading}>
+                <${TableContainer}>
+                  <${Table} size="sm" variant="simple">
+                    <${Thead} bg=${C.greyDark}>
+                      <${Tr}><${Th} color="#FFF">Flag</${Th}><${Th} color="#FFF">Default</${Th}><${Th} color="#FFF">Description</${Th}></${Tr}>
+                    </${Thead}>
+                    <${Tbody}>
+                      <${Tr}><${Td}><${Code} bg=${C.pinkSoft} color=${C.pinkDeep}>--connect</${Code}></${Td}><${Td}>(none)</${Td}><${Td}>gRPC address of the running LND node</${Td}></${Tr}>
+                      <${Tr}><${Td}><${Code} bg=${C.pinkSoft} color=${C.pinkDeep}>--macaroon</${Code}></${Td}><${Td}>Auto-detect</${Td}><${Td}>Path to admin.macaroon</${Td}></${Tr}>
+                      <${Tr}><${Td}><${Code} bg=${C.pinkSoft} color=${C.pinkDeep}>--tlscert</${Code}></${Td}><${Td}>Auto-detect</${Td}><${Td}>Path to tls.cert for gRPC connection</${Td}></${Tr}>
+                    </${Tbody}>
+                  </${Table}>
+                </${TableContainer}>
+
+                <${Heading} as="h3" size="sm" mt="16px" mb="8px" color=${C.ink}>What Live Scanning Checks</${Heading}>
+                <${TableContainer}>
+                  <${Table} size="sm" variant="simple">
+                    <${Thead} bg=${C.greyDark}>
+                      <${Tr}><${Th} color="#FFF">Check</${Th}><${Th} color="#FFF">Severity</${Th}><${Th} color="#FFF">Description</${Th}></${Tr}>
+                    </${Thead}>
+                    <${Tbody}>
+                      <${Tr}><${Td}>Version vs Known CVEs</${Td}><${Td}>CRITICAL / HIGH</${Td}><${Td}>Compares running LND version against 5 publicly disclosed vulnerabilities</${Td}></${Tr}>
+                      <${Tr}><${Td}>Chain Sync Status</${Td}><${Td}>CRITICAL</${Td}><${Td}>Flags nodes that have not finished syncing to the blockchain</${Td}></${Tr}>
+                      <${Tr}><${Td}>Graph Sync Status</${Td}><${Td}>MEDIUM</${Td}><${Td}>Detects incomplete network graph synchronization</${Td}></${Tr}>
+                      <${Tr}><${Td}>Peer Count</${Td}><${Td}>HIGH / MEDIUM</${Td}><${Td}>Zero peers (HIGH) or fewer than 3 peers (MEDIUM)</${Td}></${Tr}>
+                      <${Tr}><${Td}>Pending Force-Close</${Td}><${Td}>HIGH</${Td}><${Td}>Detects channels in force-close state with funds in limbo</${Td}></${Tr}>
+                      <${Tr}><${Td}>Channel Balance Concentration</${Td}><${Td}>MEDIUM</${Td}><${Td}>Flags channels where local balance exceeds 80% of capacity</${Td}></${Tr}>
+                      <${Tr}><${Td}>Total Node Exposure</${Td}><${Td}>INFO</${Td}><${Td}>Reports total sats held across wallet and channels</${Td}></${Tr}>
+                    </${Tbody}>
+                  </${Table}>
+                </${TableContainer}>
+
+                <${Box} mt="10px" bg=${C.pinkSoft} borderLeft="3px solid" borderColor=${C.pink} borderRadius="4px" p="10px 14px">
+                  <${Text} fontSize="0.88rem" color=${C.pinkDeep} fontWeight="500">
+                    Live checks require a <${Code}>readonly.macaroon</${Code}> or <${Code}>admin.macaroon</${Code}>.
+                    The scanner only reads data and never modifies node state.
+                  </${Text}>
+                </${Box}>
+              </${Section}>
+
+              <!-- Security Checks -->
+              <${Section} id="checks" title="Security Checks">
+                <${Text} color=${C.greyMid} mb="10px">
+                  Every finding includes a severity level, a risk description, and an actionable remediation step.
+                  Checks are organized into five security modules.
+                </${Text}>
+
+                <${Heading} as="h3" size="sm" mt="6px" mb="8px" color=${C.ink}>Transport Security</${Heading}>
+                <${TableContainer}>
+                  <${Table} size="sm" variant="simple">
+                    <${Thead} bg=${C.greyDark}>
+                      <${Tr}><${Th} color="#FFF">Check</${Th}><${Th} color="#FFF">Severity</${Th}><${Th} color="#FFF">Description</${Th}></${Tr}>
+                    </${Thead}>
+                    <${Tbody}>
+                      <${Tr}><${Td}>TLS Certificate Expiry</${Td}><${Td}>CRITICAL / MEDIUM</${Td}><${Td}>Detects expired certificates and certificates expiring within 30 days</${Td}></${Tr}>
+                      <${Tr}><${Td}>TLS Key Type and Bit Strength</${Td}><${Td}>MEDIUM</${Td}><${Td}>Flags RSA keys shorter than 2048 bits and unsupported key types</${Td}></${Tr}>
+                      <${Tr}><${Td}>TLS Signature Algorithm</${Td}><${Td}>HIGH</${Td}><${Td}>Detects SHA-1 and MD5 signature algorithms</${Td}></${Tr}>
+                      <${Tr}><${Td}>RPC Bound to All Interfaces</${Td}><${Td}>HIGH</${Td}><${Td}>Flags <${Code}>0.0.0.0</${Code}> or <${Code}>::</${Code}> bindings for RPC or REST listeners</${Td}></${Tr}>
+                      <${Tr}><${Td}>External IP with Tor Enabled</${Td}><${Td}>HIGH</${Td}><${Td}>Detects clearnet IP exposure while Tor is configured</${Td}></${Tr}>
+                      <${Tr}><${Td}>P2P Listener on All Interfaces</${Td}><${Td}>MEDIUM</${Td}><${Td}>Increases node network footprint without Tor</${Td}></${Tr}>
+                      <${Tr}><${Td}>NAT / UPnP Enabled</${Td}><${Td}>MEDIUM</${Td}><${Td}>Automatic router port forwarding bypasses firewall controls</${Td}></${Tr}>
+                      <${Tr}><${Td}>Multiple Clearnet External IPs</${Td}><${Td}>MEDIUM</${Td}><${Td}>Unnecessary address exposure broadens reachable surface</${Td}></${Tr}>
+                      <${Tr}><${Td}>gRPC / REST on Non-Loopback Host</${Td}><${Td}>HIGH</${Td}><${Td}>Control-plane APIs reachable from other network hosts</${Td}></${Tr}>
+                    </${Tbody}>
+                  </${Table}>
+                </${TableContainer}>
+
+                <${Heading} as="h3" size="sm" mt="16px" mb="8px" color=${C.ink}>Key Management and File Permissions</${Heading}>
+                <${TableContainer}>
+                  <${Table} size="sm" variant="simple">
+                    <${Thead} bg=${C.greyDark}>
+                      <${Tr}><${Th} color="#FFF">Check</${Th}><${Th} color="#FFF">Severity</${Th}><${Th} color="#FFF">Description</${Th}></${Tr}>
+                    </${Thead}>
+                    <${Tbody}>
+                      <${Tr}><${Td}>wallet.db Permissions</${Td}><${Td}>CRITICAL</${Td}><${Td}>Must be 0600 or stricter</${Td}></${Tr}>
+                      <${Tr}><${Td}>tls.key Permissions</${Td}><${Td}>CRITICAL</${Td}><${Td}>Must be 0600 or stricter</${Td}></${Tr}>
+                      <${Tr}><${Td}>Macaroon File Permissions</${Td}><${Td}>CRITICAL / HIGH</${Td}><${Td}>admin.macaroon (CRITICAL), readonly/invoice (HIGH)</${Td}></${Tr}>
+                      <${Tr}><${Td}>channel.backup Permissions</${Td}><${Td}>CRITICAL</${Td}><${Td}>Must be 0600 or stricter</${Td}></${Tr}>
+                      <${Tr}><${Td}>lnd.conf Permissions</${Td}><${Td}>HIGH</${Td}><${Td}>Must be 0640 or stricter</${Td}></${Tr}>
+                      <${Tr}><${Td}>Tor Onion Private Key</${Td}><${Td}>CRITICAL</${Td}><${Td}>Must be 0600 or stricter</${Td}></${Tr}>
+                      <${Tr}><${Td}>Symlink Detection</${Td}><${Td}>HIGH</${Td}><${Td}>Sensitive files must not be symbolic links</${Td}></${Tr}>
+                    </${Tbody}>
+                  </${Table}>
+                </${TableContainer}>
+
+                <${Heading} as="h3" size="sm" mt="16px" mb="8px" color=${C.ink}>Access Control</${Heading}>
+                <${TableContainer}>
+                  <${Table} size="sm" variant="simple">
+                    <${Thead} bg=${C.greyDark}>
+                      <${Tr}><${Th} color="#FFF">Check</${Th}><${Th} color="#FFF">Severity</${Th}><${Th} color="#FFF">Description</${Th}></${Tr}>
+                    </${Thead}>
+                    <${Tbody}>
+                      <${Tr}><${Td}>Macaroon Authentication Disabled</${Td}><${Td}>CRITICAL</${Td}><${Td}>Flags <${Code}>no-macaroons=true</${Code}> which removes all authentication</${Td}></${Tr}>
+                      <${Tr}><${Td}>Stray Macaroon Files</${Td}><${Td}>CRITICAL / HIGH</${Td}><${Td}>Macaroon files found outside the LND data directory</${Td}></${Tr}>
+                      <${Tr}><${Td}>noseedbackup Enabled</${Td}><${Td}>CRITICAL</${Td}><${Td}>Wallet seed is never persisted to disk</${Td}></${Tr}>
+                      <${Tr}><${Td}>noencryptwallet Enabled</${Td}><${Td}>CRITICAL</${Td}><${Td}>Wallet file stored without encryption</${Td}></${Tr}>
+                      <${Tr}><${Td}>Debug Log Level</${Td}><${Td}>HIGH</${Td}><${Td}>Flags <${Code}>debuglevel=trace</${Code}> or <${Code}>debug</${Code}> in production</${Td}></${Tr}>
+                      <${Tr}><${Td}>debughtlc Enabled</${Td}><${Td}>MEDIUM</${Td}><${Td}>Debug HTLC mode is active</${Td}></${Tr}>
+                      <${Tr}><${Td}>trickledelay=0</${Td}><${Td}>MEDIUM</${Td}><${Td}>Disabling trickle delay aids timing analysis</${Td}></${Tr}>
+                      <${Tr}><${Td}>unsafe-disconnect</${Td}><${Td}>LOW</${Td}><${Td}>Allows unclean peer disconnections</${Td}></${Tr}>
+                    </${Tbody}>
+                  </${Table}>
+                </${TableContainer}>
+
+                <${Heading} as="h3" size="sm" mt="16px" mb="8px" color=${C.ink}>Network Privacy</${Heading}>
+                <${TableContainer}>
+                  <${Table} size="sm" variant="simple">
+                    <${Thead} bg=${C.greyDark}>
+                      <${Tr}><${Th} color="#FFF">Check</${Th}><${Th} color="#FFF">Severity</${Th}><${Th} color="#FFF">Description</${Th}></${Tr}>
+                    </${Thead}>
+                    <${Tbody}>
+                      <${Tr}><${Td}>Tor Proxy Bypass</${Td}><${Td}>HIGH</${Td}><${Td}>Flags <${Code}>tor.skip-proxy-for-clearnet-targets</${Code}></${Td}></${Tr}>
+                      <${Tr}><${Td}>Tor Stream Isolation</${Td}><${Td}>MEDIUM</${Td}><${Td}>Recommends enabling <${Code}>tor.streamisolation</${Code}></${Td}></${Tr}>
+                      <${Tr}><${Td}>V2 Onion Service</${Td}><${Td}>HIGH</${Td}><${Td}>V2 onion addresses are deprecated and insecure</${Td}></${Tr}>
+                      <${Tr}><${Td}>Onion Key Encryption</${Td}><${Td}>MEDIUM</${Td}><${Td}>Tor private key should be encrypted at rest</${Td}></${Tr}>
+                      <${Tr}><${Td}>SCID Alias</${Td}><${Td}>MEDIUM</${Td}><${Td}>Short Channel ID aliases improve privacy</${Td}></${Tr}>
+                    </${Tbody}>
+                  </${Table}>
+                </${TableContainer}>
+
+                <${Heading} as="h3" size="sm" mt="16px" mb="8px" color=${C.ink}>Channel Safety</${Heading}>
+                <${TableContainer}>
+                  <${Table} size="sm" variant="simple">
+                    <${Thead} bg=${C.greyDark}>
+                      <${Tr}><${Th} color="#FFF">Check</${Th}><${Th} color="#FFF">Severity</${Th}><${Th} color="#FFF">Description</${Th}></${Tr}>
+                    </${Thead}>
+                    <${Tbody}>
+                      <${Tr}><${Td}>Watchtower Client</${Td}><${Td}>HIGH</${Td}><${Td}>No watchtower configuration detected</${Td}></${Tr}>
+                      <${Tr}><${Td}>Confirmation Depth</${Td}><${Td}>MEDIUM</${Td}><${Td}>Funding confirmation target below 3 blocks</${Td}></${Tr}>
+                      <${Tr}><${Td}>Max Channel Size</${Td}><${Td}>MEDIUM</${Td}><${Td}>Channels exceeding 0.1 BTC without Wumbo</${Td}></${Tr}>
+                      <${Tr}><${Td}>Max Pending Channels</${Td}><${Td}>LOW</${Td}><${Td}>More than 10 pending channels allowed</${Td}></${Tr}>
+                    </${Tbody}>
+                  </${Table}>
+                </${TableContainer}>
+
+                <${Heading} as="h3" size="sm" mt="16px" mb="8px" color=${C.ink}>Port Scanning</${Heading}>
+                <${Text} color=${C.greyMid} mb="8px">
+                  Lnaudit probes known LND and Bitcoin ports on the target host to detect unexpected network exposure.
+                </${Text}>
+                <${TableContainer}>
+                  <${Table} size="sm" variant="simple">
+                    <${Thead} bg=${C.greyDark}>
+                      <${Tr}><${Th} color="#FFF">Port</${Th}><${Th} color="#FFF">Service</${Th}><${Th} color="#FFF">Severity</${Th}><${Th} color="#FFF">Description</${Th}></${Tr}>
+                    </${Thead}>
+                    <${Tbody}>
+                      <${Tr}><${Td}>10009</${Td}><${Td}>LND gRPC</${Td}><${Td}>HIGH</${Td}><${Td}>Control plane API with full wallet access</${Td}></${Tr}>
+                      <${Tr}><${Td}>8080</${Td}><${Td}>LND REST</${Td}><${Td}>HIGH</${Td}><${Td}>REST API exposing the same controls as gRPC</${Td}></${Tr}>
+                      <${Tr}><${Td}>8332</${Td}><${Td}>Bitcoin RPC (Mainnet)</${Td}><${Td}>HIGH</${Td}><${Td}>Bitcoin Core wallet and blockchain RPC</${Td}></${Tr}>
+                      <${Tr}><${Td}>9735</${Td}><${Td}>Lightning P2P</${Td}><${Td}>INFO</${Td}><${Td}>Expected for routing nodes</${Td}></${Tr}>
+                      <${Tr}><${Td}>9911</${Td}><${Td}>Watchtower Server</${Td}><${Td}>LOW</${Td}><${Td}>Watchtower service port</${Td}></${Tr}>
+                      <${Tr}><${Td}>18332</${Td}><${Td}>Bitcoin RPC (Testnet)</${Td}><${Td}>MEDIUM</${Td}><${Td}>Testnet RPC, may leak configuration</${Td}></${Tr}>
+                      <${Tr}><${Td}>18443</${Td}><${Td}>Bitcoin RPC (Regtest)</${Td}><${Td}>MEDIUM</${Td}><${Td}>Development RPC should not be exposed</${Td}></${Tr}>
+                      <${Tr}><${Td}>8333</${Td}><${Td}>Bitcoin P2P (Mainnet)</${Td}><${Td}>INFO</${Td}><${Td}>Expected for full nodes</${Td}></${Tr}>
+                    </${Tbody}>
+                  </${Table}>
+                </${TableContainer}>
+              </${Section}>
+
+              <!-- Output Examples -->
+              <${Section} id="output" title="Output Examples">
+                <${Heading} as="h3" size="sm" mb="6px" color=${C.ink}>Table Output (Default)</${Heading}>
+                <${CodeBlock}>${`$ lnaudit scan --config ~/.lnd/lnd.conf
+
+lnaudit v0.1.0
+
+  CRITICAL  wallet.db has permissions 0644 (too permissive)
+            chmod 0600 ~/.lnd/data/chain/bitcoin/mainnet/wallet.db
+
+  CRITICAL  noseedbackup is enabled
+            Remove noseedbackup from [Application Options] in lnd.conf
+
+  HIGH      No watchtower client configured
+            Add [wtclient] section with at least one tower URI
+
+  HIGH      RPC listener bound to all interfaces (0.0.0.0:10009)
+            Bind rpclisten to 127.0.0.1:10009
+
+  MEDIUM    Tor onion key is not encrypted on disk
+            Set tor.encryptkey=true in lnd.conf
+
+Score: 38/100  Critical Risk
+  2 critical  2 high  1 medium`}</${CodeBlock}>
+
+                <${Heading} as="h3" size="sm" mt="16px" mb="6px" color=${C.ink}>Live Scan Output</${Heading}>
+                <${CodeBlock}>${`$ lnaudit scan --connect localhost:10009 --verbose
+
+Connected to LND at localhost:10009
+
+  INFO    Port 9735 open: Lightning P2P
+          No action needed unless running a private node behind Tor.
+
+  MEDIUM  Port 18443 open: Bitcoin Core RPC (regtest)
+          Bind regtest RPC to 127.0.0.1 or stop the regtest daemon if not needed.
+
+  MEDIUM  Node has only 1 peer(s)
+          Connect to additional well-known peers to improve resilience.
+
+  INFO    Total node exposure: 20991459 sats (0.2099 BTC)
+          Ensure watchtowers are active, backups are current, and access controls are tight.
+
+Score: 90/100  Hardened
+  0 critical  0 high  2 medium  0 low  2 info`}</${CodeBlock}>
+
+                <${Heading} as="h3" size="sm" mt="16px" mb="6px" color=${C.ink}>JSON Output</${Heading}>
+                <${CodeBlock}>${`{
+  "score": 38,
+  "rating": "critical_risk",
+  "summary": {
+    "critical": 2,
+    "high": 2,
+    "medium": 1,
+    "low": 0,
+    "info": 0
+  },
+  "findings": [
+    {
+      "id": "PERM-wallet.db",
+      "module": "keys",
+      "severity": "CRITICAL",
+      "title": "wallet.db has permissions 0644 (too permissive)",
+      "description": "wallet.db at ~/.lnd/data/.../wallet.db has permissions 0644.",
+      "remediation": "chmod 0600 ~/.lnd/data/chain/bitcoin/mainnet/wallet.db"
+    }
+  ]
+}`}</${CodeBlock}>
+              </${Section}>
+
+              <!-- Scoring Model -->
+              <${Section} id="scoring" title="Scoring Model">
+                <${Text} color=${C.greyMid} mb="10px">
+                  The security score starts at 100 and deducts points for each finding based on its severity.
+                  The score has a minimum floor of 0.
+                </${Text}>
+
+                <${Grid}
+                  templateColumns=${["repeat(3, 1fr)", "repeat(5, 1fr)"]}
+                  gap="8px"
+                  mb="14px"
+                >
+                  ${[
+                    ["CRITICAL", "-15", "#E53E3E"],
+                    ["HIGH",     "-10", "#DD6B20"],
+                    ["MEDIUM",   "-5",  "#D69E2E"],
+                    ["LOW",      "-2",  "#3182CE"],
+                    ["INFO",     "0",   "#38A169"],
+                  ].map(([sev, pts, color]) => html`
+                    <${Box}
+                      key=${sev}
+                      bg=${C.greyDark}
+                      borderRadius="6px"
+                      p="10px"
+                      textAlign="center"
+                    >
+                      <${Text} fontWeight="700" color=${color} fontSize="0.8rem">${sev}</${Text}>
+                      <${Text} fontWeight="800" color="#FFF" fontSize="1rem">${pts}</${Text}>
+                    </${Box}>
+                  `)}
+                </${Grid}>
+
+                <${Heading} as="h3" size="sm" mt="6px" mb="8px" color=${C.ink}>Rating Thresholds</${Heading}>
+                <${TableContainer}>
+                  <${Table} size="sm" variant="simple">
+                    <${Thead} bg=${C.greyDark}>
+                      <${Tr}><${Th} color="#FFF">Score Range</${Th}><${Th} color="#FFF">Rating</${Th}></${Tr}>
+                    </${Thead}>
+                    <${Tbody}>
+                      <${Tr}><${Td}>90 to 100</${Td}><${Td}><${Badge} colorScheme="green">Hardened</${Badge}></${Td}></${Tr}>
+                      <${Tr}><${Td}>70 to 89</${Td}><${Td}><${Badge} colorScheme="blue">Acceptable</${Badge}></${Td}></${Tr}>
+                      <${Tr}><${Td}>40 to 69</${Td}><${Td}><${Badge} colorScheme="orange">Needs Hardening</${Badge}></${Td}></${Tr}>
+                      <${Tr}><${Td}>0 to 39</${Td}><${Td}><${Badge} colorScheme="red">Critical Risk</${Badge}></${Td}></${Tr}>
+                    </${Tbody}>
+                  </${Table}>
+                </${TableContainer}>
+
+                <${Box} mt="10px" bg=${C.pinkSoft} borderLeft="3px solid" borderColor=${C.pink} borderRadius="4px" p="10px 14px">
+                  <${Text} fontSize="0.88rem" color=${C.pinkDeep} fontWeight="500">
+                    Display filters such as <${Code}>--min-severity</${Code}> and <${Code}>--verbose</${Code}> affect
+                    only the rendered output. The score is always computed against the full unfiltered report.
+                  </${Text}>
+                </${Box}>
+              </${Section}>
+
+              <!-- Architecture -->
+              <${Section} id="architecture" title="Architecture">
+                <${CodeBlock}>${`lnaudit/
+├── cmd/                    # CLI Commands (scan, version)
+├── pkg/
+│   ├── scanner/            # Finding Model, Report Engine, Score Calculation
+│   ├── checks/             # Security Check Implementations
+│   │   ├── permissions.go  # File Permission Auditing, Symlink Detection
+│   │   ├── transport.go    # TLS, RPC Binding, External IP Exposure
+│   │   ├── exposure.go     # P2P Listener, NAT/UPnP, Network Exposure
+│   │   ├── access.go       # Macaroon Auth, Dangerous Flags
+│   │   ├── privacy.go      # Tor Configuration, Channel Safety
+│   │   ├── live.go         # Live Checks: Version, Sync, Peers, Balance
+│   │   ├── cves.go         # Known CVE Database for LND Versions
+│   │   └── ports.go        # Open Port Scanning
+│   ├── grpc/               # gRPC Client Interface and Connection
+│   │   ├── client.go       # LndClient Interface and Response Types
+│   │   ├── connect.go      # TLS + Macaroon Auth, Real Implementation
+│   │   └── mock.go         # MockClient for Unit Testing
+│   ├── config/             # lnd.conf Parser (INI Format, Multi-Value Keys)
+│   ├── lndpath/            # Platform-Specific LND Path Detection
+│   └── report/             # Table and JSON Output Formatters
+├── docs/                   # Published Documentation and Research
+├── Makefile                # Build, Test, Lint, Release Targets
+└── .github/workflows/      # CI, Release, and Docs Deployment`}</${CodeBlock}>
+              </${Section}>
+
+              <!-- Development -->
+              <${Section} id="development" title="Development">
+                <${Heading} as="h3" size="sm" mb="6px" color=${C.ink}>Tooling</${Heading}>
+                <${CodeBlock}>${`# Install Development Dependencies
+make dev-deps
+
+# Run Full Quality Gate (Format, Vet, Lint, Test)
+make check
+
+# Build Binary
+make build
+
+# Run Tests with Race Detector
+make test-race
+
+# Generate Coverage Report
+make coverage
+
+# Cross-Compile Release Binaries
+make release`}</${CodeBlock}>
+
+                <${Heading} as="h3" size="sm" mt="16px" mb="8px" color=${C.ink}>Adding a New Security Check</${Heading}>
+                <${OrderedList} color=${C.greyMid} spacing="3px" pl="4px">
+                  <${ListItem}>Add check logic in <${Code} bg=${C.pinkSoft} color=${C.pinkDeep}>pkg/checks/</${Code}></${ListItem}>
+                  <${ListItem}>Return <${Code} bg=${C.pinkSoft} color=${C.pinkDeep}>[]scanner.Finding</${Code}> with Severity, Title, Description, and Remediation</${ListItem}>
+                  <${ListItem}>Wire the check into <${Code} bg=${C.pinkSoft} color=${C.pinkDeep}>cmd/scan.go</${Code}></${ListItem}>
+                  <${ListItem}>Write table-driven tests in the corresponding <${Code} bg=${C.pinkSoft} color=${C.pinkDeep}>_test.go</${Code}> file</${ListItem}>
+                  <${ListItem}>Run <${Code} bg=${C.pinkSoft} color=${C.pinkDeep}>make check</${Code}> before opening a PR</${ListItem}>
+                </${OrderedList}>
+                <${Text} color=${C.greyMid} mt="8px">
+                  Full contributor guidelines: <${Link} href="https://github.com/NonsoAmadi10/lnaudit/blob/main/CONTRIBUTING.md" color=${C.pink} fontWeight="600">CONTRIBUTING.md</${Link}>
+                </${Text}>
+              </${Section}>
+
+              <!-- Roadmap -->
+              <${Section} id="roadmap" title="Roadmap">
+                <${TableContainer}>
+                  <${Table} size="sm" variant="simple">
+                    <${Thead} bg=${C.greyDark}>
+                      <${Tr}><${Th} color="#FFF">Version</${Th}><${Th} color="#FFF">Capability</${Th}><${Th} color="#FFF">Status</${Th}></${Tr}>
+                    </${Thead}>
+                    <${Tbody}>
+                      <${Tr}><${Td}>v0.1.0</${Td}><${Td}>Configuration-Based Security Scanning and Scored Reporting</${Td}><${Td}><${Badge} colorScheme="green">Released</${Badge}></${Td}></${Tr}>
+                      <${Tr}><${Td}>v0.1.0</${Td}><${Td}>File Permission Auditing with Symlink Detection</${Td}><${Td}><${Badge} colorScheme="green">Released</${Badge}></${Td}></${Tr}>
+                      <${Tr}><${Td}>v0.1.0</${Td}><${Td}>TLS, Tor, Macaroon, and Dangerous Flag Checks</${Td}><${Td}><${Badge} colorScheme="green">Released</${Badge}></${Td}></${Tr}>
+                      <${Tr}><${Td}>v0.2.0</${Td}><${Td}>Live Node Security Scanning via gRPC</${Td}><${Td}><${Badge} colorScheme="green">Complete</${Badge}></${Td}></${Tr}>
+                      <${Tr}><${Td}>v0.2.0</${Td}><${Td}>Known CVE Database and Version Checking</${Td}><${Td}><${Badge} colorScheme="green">Complete</${Badge}></${Td}></${Tr}>
+                      <${Tr}><${Td}>v0.2.0</${Td}><${Td}>Open Port Scanning for LND and Bitcoin Services</${Td}><${Td}><${Badge} colorScheme="green">Complete</${Badge}></${Td}></${Tr}>
+                      <${Tr}><${Td}>v0.3.0</${Td}><${Td}>Confidence Levels on Findings (Certain, Firm, Tentative)</${Td}><${Td}><${Badge} colorScheme="purple">Planned</${Badge}></${Td}></${Tr}>
+                      <${Tr}><${Td}>v0.3.0</${Td}><${Td}>SARIF Output for GitHub Code Scanning and CI/CD Pipelines</${Td}><${Td}><${Badge} colorScheme="purple">Planned</${Badge}></${Td}></${Tr}>
+                      <${Tr}><${Td}>v0.3.0</${Td}><${Td}>Severity Threshold Gating (--fail-on)</${Td}><${Td}><${Badge} colorScheme="purple">Planned</${Badge}></${Td}></${Tr}>
+                      <${Tr}><${Td}>v0.3.0</${Td}><${Td}>Baseline Diffing (Compare Scans, Report Only New Findings)</${Td}><${Td}><${Badge} colorScheme="purple">Planned</${Badge}></${Td}></${Tr}>
+                      <${Tr}><${Td}>v0.4.0</${Td}><${Td}>Standalone HTML Report Generation</${Td}><${Td}><${Badge} colorScheme="purple">Planned</${Badge}></${Td}></${Tr}>
+                      <${Tr}><${Td}>v0.4.0</${Td}><${Td}>Macaroon Permission Auditing</${Td}><${Td}><${Badge} colorScheme="purple">Planned</${Badge}></${Td}></${Tr}>
+                      <${Tr}><${Td}>v0.4.0</${Td}><${Td}>TLS Cipher and Protocol Version Probing</${Td}><${Td}><${Badge} colorScheme="purple">Planned</${Badge}></${Td}></${Tr}>
+                      <${Tr}><${Td}>v0.4.0</${Td}><${Td}>Backup Safety Validation (Freshness, Existence, Encryption)</${Td}><${Td}><${Badge} colorScheme="purple">Planned</${Badge}></${Td}></${Tr}>
+                      <${Tr}><${Td}>v0.5.0</${Td}><${Td}>Scan Profiles (Quick, Full, Compliance)</${Td}><${Td}><${Badge} colorScheme="purple">Planned</${Badge}></${Td}></${Tr}>
+                      <${Tr}><${Td}>v0.5.0</${Td}><${Td}>Custom Check Definitions via YAML Policy Files</${Td}><${Td}><${Badge} colorScheme="purple">Planned</${Badge}></${Td}></${Tr}>
+                      <${Tr}><${Td}>v0.6.0</${Td}><${Td}>Docker Security Checks (Root User, Privileged Mode, Secret Handling)</${Td}><${Td}><${Badge} colorScheme="purple">Planned</${Badge}></${Td}></${Tr}>
+                      <${Tr}><${Td}>v0.6.0</${Td}><${Td}>Kubernetes Security Checks (NetworkPolicy, RBAC, Pod Security)</${Td}><${Td}><${Badge} colorScheme="purple">Planned</${Badge}></${Td}></${Tr}>
+                      <${Tr}><${Td}>Future</${Td}><${Td}>Homebrew and Docker Distribution</${Td}><${Td}><${Badge} colorScheme="purple">Planned</${Badge}></${Td}></${Tr}>
+                      <${Tr}><${Td}>Future</${Td}><${Td}>Fleet-Level Scanning Across Multiple Nodes</${Td}><${Td}><${Badge} colorScheme="purple">Planned</${Badge}></${Td}></${Tr}>
+                      <${Tr}><${Td}>Future</${Td}><${Td}>Plugin System for Community-Contributed Checks</${Td}><${Td}><${Badge} colorScheme="purple">Planned</${Badge}></${Td}></${Tr}>
+                    </${Tbody}>
+                  </${Table}>
+                </${TableContainer}>
+              </${Section}>
+
+              <!-- Footer -->
+              <${Box} textAlign="center" py="14px">
+                <${Divider} borderColor=${C.line} mb="12px" />
+                <${Text} fontSize="0.84rem" color=${C.greyMid}>
+                  Lnaudit is open source software under the
+                  <${Link} href="https://github.com/NonsoAmadi10/lnaudit/blob/main/LICENSE" color=${C.pink} fontWeight="600"> MIT License</${Link}>.
+                </${Text}>
+                <${HStack} justify="center" spacing="14px" mt="6px">
+                  <${Link} href="https://github.com/NonsoAmadi10/lnaudit/blob/main/CONTRIBUTING.md" fontSize="0.84rem" color=${C.greyMid} fontWeight="500">Contributing</${Link}>
+                  <${Link} href="https://github.com/NonsoAmadi10/lnaudit/blob/main/SECURITY.md" fontSize="0.84rem" color=${C.greyMid} fontWeight="500">Security Policy</${Link}>
+                  <${Link} href="https://github.com/NonsoAmadi10/lnaudit/blob/main/docs/POST-MORTEM.md" fontSize="0.84rem" color=${C.greyMid} fontWeight="500">Research</${Link}>
+                </${HStack}>
+              </${Box}>
+            </${Stack}>
+          </${Box}>
+        </${GridItem}>
+      </${Grid}>
+    `;
+
+    createRoot(document.getElementById("root")).render(
+      html`<${ChakraProvider} theme=${theme}><${App} /></${ChakraProvider}>`
+    );
+  </script>
+</body>
+</html>
