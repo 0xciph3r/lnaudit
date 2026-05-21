@@ -10,6 +10,24 @@ import (
 	"github.com/NonsoAmadi10/lnaudit/pkg/scanner"
 )
 
+// macaroonScanDepth is the maximum directory depth walked during the macaroon
+// leak scan. Deep enough to catch common backup and project directories without
+// traversing the entire filesystem.
+const macaroonScanDepth = 4
+
+// skipDirs are directories that are safe to skip during the home directory walk:
+// they are either too large, never contain stray credentials, or are system dirs.
+var skipDirs = map[string]bool{
+	"node_modules": true,
+	".git":         true,
+	"vendor":       true,
+	".cache":       true,
+	".npm":         true,
+	".gradle":      true,
+	"Library":      true, // macOS system libraries
+	"go":           true, // Go SDK
+}
+
 // CheckNoMacaroons verifies that macaroon authentication is not disabled.
 func CheckNoMacaroons(cfg *config.LndConfig) []scanner.Finding {
 	if cfg.NoMacaroons {
@@ -27,65 +45,108 @@ func CheckNoMacaroons(cfg *config.LndConfig) []scanner.Finding {
 	return nil
 }
 
-// CheckAdminMacaroonLeaks scans common directories for admin.macaroon copies
-// outside the LND data directory.
+// isInsideDir reports whether path is inside (or equal to) dir.
+// Both paths should be cleaned and absolute before calling.
+// Uses filepath.Rel to avoid the HasPrefix sibling-path pitfall
+// (e.g., /data/lnd2 falsely matching /data/lnd).
+func isInsideDir(path, dir string) bool {
+	if dir == "" {
+		return false
+	}
+	rel, err := filepath.Rel(dir, path)
+	if err != nil {
+		return false
+	}
+	// Rel returns ".." or "../..." when path is outside dir.
+	return rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator))
+}
+
+// CheckAdminMacaroonLeaks scans the full home directory up to
+// macaroonScanDepth levels deep for admin.macaroon copies outside the LND
+// data directory. Walking the full home tree catches stray copies in
+// project dirs, backup dirs, and sync folders that a shallow scan misses.
 func CheckAdminMacaroonLeaks(lndDataDir string) []scanner.Finding {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return nil
 	}
 
-	searchDirs := []string{
-		filepath.Join(home, "Downloads"),
-		filepath.Join(home, "Desktop"),
-		filepath.Join(home, "Documents"),
-		os.TempDir(),
-		"/tmp",
+	cleanDataDir := ""
+	if lndDataDir != "" {
+		cleanDataDir, _ = filepath.Abs(filepath.Clean(lndDataDir))
 	}
 
 	var findings []scanner.Finding
 	seen := make(map[string]bool)
 
-	for _, dir := range searchDirs {
-		matches, _ := filepath.Glob(filepath.Join(dir, "*.macaroon"))
-		for _, m := range matches {
-			absPath, _ := filepath.Abs(m)
-			if seen[absPath] {
-				continue
-			}
-			seen[absPath] = true
+	baseDepth := strings.Count(filepath.Clean(home), string(filepath.Separator))
 
-			// Skip symlinks to avoid false positives and dangerous remediation
-			if info, err := os.Lstat(absPath); err != nil || info.Mode()&os.ModeSymlink != 0 {
-				continue
+	_ = filepath.WalkDir(home, func(path string, d os.DirEntry, err error) error {
+		if err != nil {
+			// For a single unreadable file, skip the file but continue the walk.
+			// For an unreadable directory, skip the whole subtree.
+			if d != nil && d.IsDir() {
+				return filepath.SkipDir
 			}
-
-			// Skip if it's inside the LND data directory
-			if lndDataDir != "" && strings.HasPrefix(absPath, lndDataDir) {
-				continue
-			}
-
-			name := filepath.Base(absPath)
-			sev := scanner.High
-			if name == "admin.macaroon" {
-				sev = scanner.Critical
-			}
-
-			findings = append(findings, scanner.Finding{
-				ID:       "A-3",
-				Module:   "access",
-				Severity: sev,
-				Title:    fmt.Sprintf("Macaroon found outside LND data directory: %s", name),
-				Description: fmt.Sprintf(
-					"A copy of %s was found in %s. Macaroons should only exist in the LND data directory. "+
-						"Stray copies increase the risk of credential theft.",
-					name, filepath.Dir(absPath),
-				),
-				Remediation: "Securely delete the stray macaroon file. Verify it is not needed before removal.",
-				Reference:   "POST-MORTEM.md#9-binance-2019",
-			})
+			return nil
 		}
-	}
+
+		if d.IsDir() {
+			currentDepth := strings.Count(filepath.Clean(path), string(filepath.Separator))
+			// Use > so that depth exactly equal to macaroonScanDepth is still
+			// entered -- files inside it are at depth macaroonScanDepth and
+			// are included in the scan.
+			if currentDepth-baseDepth > macaroonScanDepth {
+				return filepath.SkipDir
+			}
+			if skipDirs[d.Name()] {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+
+		if !strings.HasSuffix(d.Name(), ".macaroon") {
+			return nil
+		}
+
+		absPath, _ := filepath.Abs(path)
+		if seen[absPath] {
+			return nil
+		}
+		seen[absPath] = true
+
+		// Skip symlinks to avoid false positives.
+		info, statErr := os.Lstat(absPath)
+		if statErr != nil || info.Mode()&os.ModeSymlink != 0 {
+			return nil
+		}
+
+		// Skip if the file is inside the LND data directory.
+		if isInsideDir(absPath, cleanDataDir) {
+			return nil
+		}
+
+		name := filepath.Base(absPath)
+		sev := scanner.High
+		if name == "admin.macaroon" {
+			sev = scanner.Critical
+		}
+
+		findings = append(findings, scanner.Finding{
+			ID:       "A-3",
+			Module:   "access",
+			Severity: sev,
+			Title:    fmt.Sprintf("Macaroon found outside LND data directory: %s", name),
+			Description: fmt.Sprintf(
+				"A copy of %s was found in %s. Macaroons should only exist in the LND data directory. "+
+					"Stray copies increase the risk of credential theft.",
+				name, filepath.Dir(absPath),
+			),
+			Remediation: "Securely delete the stray macaroon file. Verify it is not needed before removal.",
+			Reference:   "POST-MORTEM.md#9-binance-2019",
+		})
+		return nil
+	})
 
 	return findings
 }

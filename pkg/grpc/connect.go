@@ -4,7 +4,10 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
 	"time"
+	"unicode"
 
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/macaroons"
@@ -16,7 +19,8 @@ import (
 // rpcTimeout is the maximum time allowed for a single gRPC call.
 const rpcTimeout = 10 * time.Second
 
-// maxStringLen caps the length of untrusted strings from gRPC responses.
+// maxStringLen caps the length of untrusted strings from gRPC responses,
+// measured in runes (Unicode code points) after sanitization.
 const maxStringLen = 4096
 
 // realClient wraps an actual gRPC connection to LND.
@@ -29,16 +33,37 @@ type realClient struct {
 // It loads TLS credentials from tlsCertPath and authenticates
 // with the macaroon at macaroonPath.
 func Connect(host, tlsCertPath, macaroonPath string) (LndClient, error) {
+	home, _ := os.UserHomeDir()
+
+	// redact replaces the home directory prefix in path with $HOME, but only
+	// when the boundary falls on a path separator (or is an exact match).
+	// This prevents /home/al from matching /home/alice2/secret.
+	redact := func(path string) string {
+		if home == "" {
+			return path
+		}
+		cleanPath := filepath.Clean(path)
+		cleanHome := filepath.Clean(home)
+		if cleanPath == cleanHome {
+			return "$HOME"
+		}
+		prefix := cleanHome + string(filepath.Separator)
+		if strings.HasPrefix(cleanPath, prefix) {
+			return "$HOME" + cleanPath[len(cleanHome):]
+		}
+		return path
+	}
+
 	// Load TLS certificate
 	creds, err := credentials.NewClientTLSFromFile(tlsCertPath, "")
 	if err != nil {
-		return nil, fmt.Errorf("loading TLS cert %s: %w", tlsCertPath, err)
+		return nil, fmt.Errorf("loading TLS cert %s: %w", redact(tlsCertPath), err)
 	}
 
 	// Load macaroon
 	macBytes, err := os.ReadFile(macaroonPath)
 	if err != nil {
-		return nil, fmt.Errorf("reading macaroon %s: %w", macaroonPath, err)
+		return nil, fmt.Errorf("reading macaroon %s: %w", redact(macaroonPath), err)
 	}
 
 	// Zero out raw bytes after parsing
@@ -74,13 +99,64 @@ func Connect(host, tlsCertPath, macaroonPath string) (LndClient, error) {
 	}, nil
 }
 
-// truncate caps a string at maxStringLen to prevent memory abuse
-// from malicious gRPC responses.
+// truncate strips ANSI/VT escape sequences and non-printable control
+// characters from s, then caps the result to maxStringLen runes.
+// Rune-based slicing avoids splitting multi-byte UTF-8 sequences.
+// The sanitization and length check share a single []rune conversion.
 func truncate(s string) string {
-	if len(s) > maxStringLen {
-		return s[:maxStringLen] + "...(truncated)"
+	out := sanitizeRunes([]rune(s))
+	if len(out) > maxStringLen {
+		return string(out[:maxStringLen]) + "...(truncated)"
 	}
-	return s
+	return string(out)
+}
+
+// sanitizeRunes removes ANSI/VT escape sequences and non-printable control
+// characters from runes, returning only safe printable content.
+//
+// Sequences handled:
+//   - CSI (ESC [): skip until final byte in range 0x40-0x7E
+//   - OSC (ESC ]): skip until BEL (\x07), 8-bit ST (\x9C), or ESC-backslash (2-byte ST)
+//   - Other ESC sequences: skip ESC plus the following character
+func sanitizeRunes(runes []rune) []rune {
+	out := make([]rune, 0, len(runes))
+	for i := 0; i < len(runes); i++ {
+		r := runes[i]
+		if r == '\x1b' && i+1 < len(runes) {
+			i++
+			next := runes[i]
+			switch next {
+			case '[':
+				// CSI sequence: skip until final byte (0x40-0x7E inclusive)
+				for i+1 < len(runes) {
+					i++
+					if runes[i] >= 0x40 && runes[i] <= 0x7e {
+						break
+					}
+				}
+			case ']':
+				// OSC sequence: skip until BEL, 8-bit ST, or ESC-backslash (2-byte ST)
+				for i+1 < len(runes) {
+					i++
+					if runes[i] == '\x07' || runes[i] == '\x9c' {
+						break
+					}
+					if runes[i] == '\x1b' && i+1 < len(runes) && runes[i+1] == '\\' {
+						i++ // consume the backslash
+						break
+					}
+				}
+			default:
+				// Other ESC sequences: ESC + one char already consumed; skip both.
+			}
+			continue
+		}
+		// Allow printable runes and safe whitespace only.
+		if unicode.IsPrint(r) || r == ' ' || r == '\t' || r == '\n' {
+			out = append(out, r)
+		}
+	}
+	return out
 }
 
 func (c *realClient) GetInfo() (*NodeInfo, error) {

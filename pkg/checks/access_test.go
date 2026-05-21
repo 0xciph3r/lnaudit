@@ -29,26 +29,32 @@ func TestCheckNoMacaroons_Enabled(t *testing.T) {
 }
 
 func TestCheckAdminMacaroonLeaks_NoLeaks(t *testing.T) {
-	// Use a temp dir as LND data dir — no stray macaroons should exist
-	dir := t.TempDir()
-	findings := CheckAdminMacaroonLeaks(dir)
-	// We can't guarantee other dirs are clean, so just verify it runs without panic
-	_ = findings
+	// Point HOME at an empty temp dir -- no macaroons should be found.
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+
+	findings := CheckAdminMacaroonLeaks(home)
+	if len(findings) != 0 {
+		t.Errorf("expected 0 findings in empty dir, got %d", len(findings))
+	}
 }
 
 func TestCheckAdminMacaroonLeaks_FindsStray(t *testing.T) {
-	tmpDir := t.TempDir()
-	strayPath := filepath.Join(tmpDir, "admin.macaroon")
-	if err := os.WriteFile(strayPath, []byte("fake-macaroon"), 0o600); err != nil {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+
+	// Place a stray admin.macaroon one level inside home.
+	strayDir := filepath.Join(home, "projects")
+	if err := os.Mkdir(strayDir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	strayPath := filepath.Join(strayDir, "admin.macaroon")
+	if err := os.WriteFile(strayPath, []byte("fake"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 
-	// Use a different dir as LND data dir so the stray is outside it
-	lndDir := t.TempDir()
-
-	// We need to search the tmpDir. Since CheckAdminMacaroonLeaks searches
-	// predefined dirs, we test the detection logic directly.
-	findings := checkMacaroonInDir(tmpDir, lndDir)
+	lndDir := filepath.Join(home, ".lnd")
+	findings := CheckAdminMacaroonLeaks(lndDir)
 	if len(findings) != 1 {
 		t.Fatalf("expected 1 finding for stray admin.macaroon, got %d", len(findings))
 	}
@@ -58,43 +64,110 @@ func TestCheckAdminMacaroonLeaks_FindsStray(t *testing.T) {
 }
 
 func TestCheckAdminMacaroonLeaks_IgnoresLndDir(t *testing.T) {
-	lndDir := t.TempDir()
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+
+	lndDir := filepath.Join(home, ".lnd", "data", "chain", "bitcoin", "mainnet")
+	if err := os.MkdirAll(lndDir, 0o700); err != nil {
+		t.Fatal(err)
+	}
 	macPath := filepath.Join(lndDir, "admin.macaroon")
-	if err := os.WriteFile(macPath, []byte("fake-macaroon"), 0o600); err != nil {
+	if err := os.WriteFile(macPath, []byte("fake"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 
-	findings := checkMacaroonInDir(lndDir, lndDir)
+	findings := CheckAdminMacaroonLeaks(lndDir)
 	if len(findings) != 0 {
 		t.Errorf("should ignore macaroons inside LND data dir, got %d findings", len(findings))
 	}
 }
 
-// helper to test macaroon detection in a specific directory
-func checkMacaroonInDir(searchDir, lndDataDir string) []scanner.Finding {
-	matches, _ := filepath.Glob(filepath.Join(searchDir, "*.macaroon"))
-	findings := make([]scanner.Finding, 0, len(matches))
-	for _, m := range matches {
-		absPath, _ := filepath.Abs(m)
-		if lndDataDir != "" {
-			absLnd, _ := filepath.Abs(lndDataDir)
-			if len(absPath) >= len(absLnd) && absPath[:len(absLnd)] == absLnd {
-				continue
-			}
-		}
-		name := filepath.Base(absPath)
-		sev := scanner.High
-		if name == "admin.macaroon" {
-			sev = scanner.Critical
-		}
-		findings = append(findings, scanner.Finding{
-			ID:       "A-3",
-			Module:   "access",
-			Severity: sev,
-			Title:    "Macaroon found outside LND data directory: " + absPath,
-		})
+func TestCheckAdminMacaroonLeaks_SiblingDirNotIgnored(t *testing.T) {
+	// /home/lnddata and /home/lnddata2 are siblings -- a file in lnddata2
+	// must NOT be excluded when lndDataDir is lnddata.
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+
+	lndDir := filepath.Join(home, "lnddata")
+	siblingDir := filepath.Join(home, "lnddata2")
+	if err := os.MkdirAll(lndDir, 0o700); err != nil {
+		t.Fatal(err)
 	}
-	return findings
+	if err := os.MkdirAll(siblingDir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	siblingMac := filepath.Join(siblingDir, "admin.macaroon")
+	if err := os.WriteFile(siblingMac, []byte("fake"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	findings := CheckAdminMacaroonLeaks(lndDir)
+	if len(findings) != 1 {
+		t.Fatalf("sibling path should produce 1 finding, got %d", len(findings))
+	}
+}
+
+func TestCheckAdminMacaroonLeaks_DepthLimit(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+
+	// Build a chain: home/a/b/c/d/admin.macaroon (depth 4 from home -- included)
+	deepDir := filepath.Join(home, "a", "b", "c", "d")
+	if err := os.MkdirAll(deepDir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	deepMac := filepath.Join(deepDir, "admin.macaroon")
+	if err := os.WriteFile(deepMac, []byte("fake"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	// Build a chain: home/a/b/c/d/e/admin.macaroon (depth 5 -- excluded)
+	tooDeepDir := filepath.Join(home, "a", "b", "c", "d", "e")
+	if err := os.MkdirAll(tooDeepDir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	tooDeepMac := filepath.Join(tooDeepDir, "admin.macaroon")
+	if err := os.WriteFile(tooDeepMac, []byte("fake"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	findings := CheckAdminMacaroonLeaks("")
+	if len(findings) != 1 {
+		t.Errorf("expected exactly 1 finding (depth 4 included, depth 5 excluded), got %d", len(findings))
+	}
+	if len(findings) == 1 && findings[0].Severity != scanner.Critical {
+		t.Errorf("finding should be CRITICAL, got %v", findings[0].Severity)
+	}
+}
+
+func TestCheckAdminMacaroonLeaks_SkipDirsNotTraversed(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+
+	// Place a macaroon inside a skipDir -- it must NOT be reported.
+	gitDir := filepath.Join(home, ".git")
+	if err := os.Mkdir(gitDir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	gitMac := filepath.Join(gitDir, "admin.macaroon")
+	if err := os.WriteFile(gitMac, []byte("fake"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	// Place a macaroon in a normal dir -- it MUST be reported.
+	normalDir := filepath.Join(home, "backup")
+	if err := os.Mkdir(normalDir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	normalMac := filepath.Join(normalDir, "admin.macaroon")
+	if err := os.WriteFile(normalMac, []byte("fake"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	findings := CheckAdminMacaroonLeaks("")
+	if len(findings) != 1 {
+		t.Errorf("expected 1 finding (skip dir excluded), got %d", len(findings))
+	}
 }
 
 // --- Dangerous Flags Tests ---
