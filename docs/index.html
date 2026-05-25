@@ -35,25 +35,32 @@
 
     /* ── Palette ────────────────────────────────────────────── */
     const C = {
-      ivory:      "#FFFFF0",
-      pink:       "#FF6B9D",
-      pinkSoft:   "#FFF0F5",
-      pinkDeep:   "#E8457C",
-      grey:       "#3B3B3B",
-      greyDark:   "#1E1E1E",
-      greyMid:    "#535353",
-      greyLight:  "#B3B3B3",
-      greySurface:"#282828",
-      surface:    "#FFFFFF",
-      line:       "#E8E8E8",
-      ink:        "#191414",
+      bg:         "#0A0A0F",
+      blue:       "#29ABE2",
+      blueSoft:   "#0D1E2E",
+      blueDeep:   "#1580B8",
+      amber:      "#F5A623",
+      amberSoft:  "#1E1608",
+      grey:       "#2A2A38",
+      greyDark:   "#0D0D12",
+      greyMid:    "#8892A4",
+      greyLight:  "#A0AABB",
+      greySurface:"#13131A",
+      surface:    "#13131A",
+      line:       "#1E1E2A",
+      ink:        "#E2E8F0",
+      // legacy aliases so unchanged code still works
+      ivory:      "#0A0A0F",
+      pink:       "#29ABE2",
+      pinkSoft:   "#0D1E2E",
+      pinkDeep:   "#1580B8",
     };
 
     const theme = extendTheme({
       styles: {
         global: {
           "html": { scrollBehavior: "smooth" },
-          "body": { bg: C.ivory, color: C.ink, lineHeight: "tall" },
+          "body": { bg: C.bg, color: C.ink, lineHeight: "tall" },
         },
       },
       fonts: {
@@ -103,7 +110,9 @@
         borderRadius="8px"
         p=${["18px", "22px", "26px"]}
         mb="12px"
-        boxShadow="0 1px 3px rgba(0,0,0,0.06)"
+        boxShadow="0 2px 12px rgba(0,0,0,0.4)"
+        border="1px solid"
+        borderColor=${C.line}
       >
         <${Heading}
           as="h2"
@@ -112,7 +121,7 @@
           mb="10px"
           pb="8px"
           borderBottom="2px solid"
-          borderColor=${C.pink}
+          borderColor=${C.blue}
         >
           ${title}
         </${Heading}>
@@ -138,23 +147,14 @@
     /* ── Logo ───────────────────────────────────────────────── */
     const Logo = () => html`
       <${HStack} spacing="10px">
-        <${Box}
-          w="34px" h="34px"
-          borderRadius="50%"
-          bg=${C.pink}
-          display="flex"
-          alignItems="center"
-          justifyContent="center"
-          flexShrink="0"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <path d="M12 2L4 6.5V12C4 17 7.4 21.2 12 22.4C16.6 21.2 20 17 20 12V6.5L12 2Z" fill="#FFFFFF" opacity="0.95"/>
-            <path d="M13.2 7H10.2L8.6 13H11L9.8 18L15.8 11H12.6L14.2 7H13.2Z" fill=${C.greyDark}/>
-          </svg>
-        </${Box}>
+        <img
+          src="lnaudit.png"
+          alt="lnaudit logo"
+          style=${{ width: "42px", height: "42px", objectFit: "contain", flexShrink: 0 }}
+        />
         <${VStack} align="start" spacing="0">
           <${Text} fontWeight="800" fontSize="1rem" color="#FFFFFF" letterSpacing="-0.3px">
-            Lnaudit
+            lnaudit
           </${Text}>
           <${Text} fontSize="0.65rem" fontWeight="600" color=${C.greyLight} letterSpacing="0.08em" textTransform="uppercase">
             Documentation
@@ -213,9 +213,9 @@
               as="a"
               href="https://github.com/NonsoAmadi10/lnaudit"
               size="sm"
-              bg=${C.pink}
-              color="white"
-              _hover=${{ bg: C.pinkDeep }}
+              bg=${C.amber}
+              color="black"
+              _hover=${{ bg: "#D4901F" }}
               fontWeight="600"
             >GitHub</${Button}>
           </${Flex}>
@@ -237,35 +237,45 @@
                 bg=${C.surface}
                 borderRadius="8px"
                 p=${["20px", "26px", "32px"]}
-                boxShadow="0 1px 3px rgba(0,0,0,0.06)"
+                boxShadow="0 2px 12px rgba(0,0,0,0.4)"
+                border="1px solid"
+                borderColor=${C.line}
               >
-                <${Badge}
-                  bg=${C.pinkSoft}
-                  color=${C.pinkDeep}
-                  px="10px"
-                  py="3px"
-                  borderRadius="full"
-                  fontWeight="700"
-                  fontSize="0.7rem"
-                  letterSpacing="0.05em"
-                >
-                  ENTERPRISE SECURITY TOOLING
-                </${Badge}>
+                <${HStack} spacing="14px" mb="18px" align="center">
+                  <img src="lnaudit.png" alt="lnaudit" style=${{ width: "72px", height: "72px", objectFit: "contain" }} />
+                  <${VStack} align="start" spacing="4px">
+                    <${Badge}
+                      bg=${C.blueSoft}
+                      color=${C.blue}
+                      px="10px"
+                      py="3px"
+                      borderRadius="full"
+                      fontWeight="700"
+                      fontSize="0.7rem"
+                      letterSpacing="0.05em"
+                      border="1px solid"
+                      borderColor=${C.blue}
+                    >
+                      ENTERPRISE SECURITY TOOLING
+                    </${Badge}>
+                    <${Text} fontSize="0.75rem" color=${C.amber} fontWeight="700" letterSpacing="0.12em" textTransform="uppercase">
+                      AUDIT. HARDEN. TRUST.
+                    </${Text}>
+                  </${VStack}>
+                </${HStack}>
 
                 <${Heading}
                   as="h1"
                   fontSize=${["1.7rem", "2rem", "2.3rem"]}
                   lineHeight="1.15"
-                  mt="12px"
                   mb="12px"
-                  color=${C.ink}
                   fontWeight="800"
                 >
-                  Lnaudit: Security Auditing for Lightning Nodes
+                  <${Box} as="span" bgGradient="linear(to-r, #29ABE2, #1580B8)" bgClip="text">ln</${Box}><${Box} as="span" color=${C.ink}>audit</${Box}>: Security Auditing for Lightning Nodes
                 </${Heading}>
 
                 <${Text} color=${C.greyMid} fontSize="0.98rem" maxW="720px" lineHeight="1.7">
-                  Lnaudit performs configuration-level security auditing for Lightning Network Daemon (LND) nodes.
+                  lnaudit performs configuration-level security auditing for Lightning Network Daemon (LND) nodes.
                   It inspects sensitive file permissions, transport layer exposure, API binding posture, Tor privacy
                   settings, and high-risk operational flags. Each scan produces a scored report with specific
                   remediation guidance for every finding.
@@ -277,13 +287,13 @@
                   mt="16px"
                 >
                   ${[
-                    ["Current Release", "v0.1.0"],
+                    ["Current Release", "v0.1.1"],
                     ["Scan Scope", "Configuration and File System"],
                     ["Deployment", "CLI, CI/CD, GitHub Actions"],
                   ].map(([label, value]) => html`
                     <${Box}
                       key=${label}
-                      bg=${C.ivory}
+                      bg=${C.greyDark}
                       borderRadius="6px"
                       p="10px 12px"
                       border="1px solid"
@@ -302,12 +312,13 @@
                   <a href="https://github.com/NonsoAmadi10/lnaudit/releases"><img src="https://img.shields.io/github/v/release/NonsoAmadi10/lnaudit" alt="Release" height="20" /></a>
                 </${HStack}>
 
-                <${Box} mt="14px" bg=${C.pinkSoft} borderLeft="3px solid" borderColor=${C.pink} borderRadius="4px" p="10px 14px">
-                  <${Text} fontSize="0.88rem" color=${C.pinkDeep} fontWeight="500">
-                    v0.1.0 provides configuration-based hardening checks. Live node assessment via gRPC is planned for v0.2.0.
+                <${Box} mt="14px" bg=${C.blueSoft} borderLeft="3px solid" borderColor=${C.blue} borderRadius="4px" p="10px 14px">
+                  <${Text} fontSize="0.88rem" color=${C.blue} fontWeight="500">
+                    v0.1.1 patches terminal injection via gRPC responses and expands the macaroon leak scan to cover the full home directory. See the <${Box} as="span" color=${C.amber} fontWeight="700">release notes</${Box}> for details.
                   </${Text}>
                 </${Box}>
               </${Box}>
+
 
               <!-- Installation -->
               <${Section} id="installation" title="Installation">
