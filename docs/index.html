@@ -275,10 +275,10 @@
                 </${Heading}>
 
                 <${Text} color=${C.greyMid} fontSize="0.98rem" maxW="720px" lineHeight="1.7">
-                  lnaudit performs configuration-level security auditing for Lightning Network Daemon (LND) nodes.
-                  It inspects sensitive file permissions, transport layer exposure, API binding posture, Tor privacy
-                  settings, and high-risk operational flags. Each scan produces a scored report with specific
-                  remediation guidance for every finding.
+                  lnaudit performs static and live security auditing for Lightning Network Daemon (LND) nodes.
+                  It inspects sensitive file permissions, transport layer exposure, API binding posture, Tor privacy,
+                  channel policy, protocol flags, gossip controls, payment settings, and live channel state.
+                  Each scan produces a scored report with a description, recommendation, and reference where available.
                 </${Text}>
 
                 <${Grid}
@@ -287,8 +287,8 @@
                   mt="16px"
                 >
                   ${[
-                    ["Current Release", "v0.1.1"],
-                    ["Scan Scope", "Configuration and File System"],
+                    ["Current Release", "v0.1.2+"],
+                    ["Scan Scope", "Static, Live gRPC, and Port Probing"],
                     ["Deployment", "CLI, CI/CD, GitHub Actions"],
                   ].map(([label, value]) => html`
                     <${Box}
@@ -314,7 +314,7 @@
 
                 <${Box} mt="14px" bg=${C.blueSoft} borderLeft="3px solid" borderColor=${C.blue} borderRadius="4px" p="10px 14px">
                   <${Text} fontSize="0.88rem" color=${C.blue} fontWeight="500">
-                    v0.1.1 patches terminal injection via gRPC responses and expands the macaroon leak scan to cover the full home directory. See the <${Box} as="span" color=${C.amber} fontWeight="700">release notes</${Box}> for details.
+                    The next release expands lnaudit into a Lightning infrastructure hardening toolkit: 60+ checks, improved reports, Bubble Tea scan progress, live channel-jamming detection, and a hardened lnd.conf generator.
                   </${Text}>
                 </${Box}>
               </${Box}>
@@ -326,13 +326,20 @@
 
                 <${Heading} as="h3" size="sm" mt="14px" mb="6px" color=${C.ink}>Prerequisites</${Heading}>
                 <${UnorderedList} color=${C.greyMid} spacing="3px" pl="4px">
-                  <${ListItem}>Go 1.23 or later (<${Link} href="https://go.dev/doc/install" color=${C.pink} fontWeight="600">Install Go</${Link}>)</${ListItem}>
+                  <${ListItem}>Go 1.24.11 or later (<${Link} href="https://go.dev/doc/install" color=${C.pink} fontWeight="600">Install Go</${Link}>)</${ListItem}>
                   <${ListItem}>Read access to the LND configuration directory on the target host</${ListItem}>
                   <${ListItem}>A running LND process is <strong>not</strong> required for configuration-only scans</${ListItem}>
                 </${UnorderedList}>
 
                 <${Heading} as="h3" size="sm" mt="16px" mb="6px" color=${C.ink}>Install from Source</${Heading}>
-                <${CodeBlock}>go install github.com/NonsoAmadi10/lnaudit@latest</${CodeBlock}>
+                <${Text} color=${C.greyMid} mb="6px">
+                  Build from source or use release binaries. Direct <${Code} bg=${C.pinkSoft} color=${C.pinkDeep}>go install @latest</${Code}>
+                  is not recommended because LND currently requires a protobuf replace directive that Go refuses for remote installs.
+                </${Text}>
+                <${CodeBlock}>${`git clone https://github.com/NonsoAmadi10/lnaudit.git
+cd lnaudit
+make build
+sudo mv bin/lnaudit /usr/local/bin/lnaudit`}</${CodeBlock}>
 
                 <${Heading} as="h3" size="sm" mt="16px" mb="6px" color=${C.ink}>Download Release Binary</${Heading}>
                 <${CodeBlock}>${`# Linux (amd64)
@@ -345,15 +352,9 @@ curl -LO https://github.com/NonsoAmadi10/lnaudit/releases/latest/download/lnaudi
 chmod +x lnaudit-darwin-arm64
 sudo mv lnaudit-darwin-arm64 /usr/local/bin/lnaudit`}</${CodeBlock}>
 
-                <${Heading} as="h3" size="sm" mt="16px" mb="6px" color=${C.ink}>Build from Source</${Heading}>
-                <${CodeBlock}>${`git clone https://github.com/NonsoAmadi10/lnaudit.git
-cd lnaudit
-make build
-./bin/lnaudit version`}</${CodeBlock}>
-
                 <${Heading} as="h3" size="sm" mt="16px" mb="6px" color=${C.ink}>Verify Installation</${Heading}>
                 <${CodeBlock}>${`$ lnaudit version
-lnaudit v0.1.0 (commit: abc1234)`}</${CodeBlock}>
+lnaudit v0.1.2 (commit: abc1234)`}</${CodeBlock}>
               </${Section}>
 
               <!-- Usage -->
@@ -394,6 +395,24 @@ lnaudit scan --fail-on high --format json
 
 # Fail only on CRITICAL findings (default)
 lnaudit scan --fail-on critical`}</${CodeBlock}>
+
+                <${Heading} as="h3" size="sm" mt="16px" mb="6px" color=${C.ink}>Generate Hardened Configuration</${Heading}>
+                <${Text} color=${C.greyMid} mb="6px">
+                  <${Code} bg=${C.pinkSoft} color=${C.pinkDeep}>lnaudit generate</${Code}> creates a hardened
+                  <${Code} bg=${C.pinkSoft} color=${C.pinkDeep}>lnd.conf</${Code}> starter template with comments explaining each setting.
+                  Use profiles to choose between a public routing node and a more restrictive private wallet node.
+                </${Text}>
+                <${CodeBlock}>${`# Generate a routing-node template to stdout
+lnaudit generate --profile routing
+
+# Generate a private wallet-node template
+lnaudit generate --profile private
+
+# Write a Tor-enabled config to disk with 0600 permissions
+lnaudit generate --profile routing --tor --output lnd.conf
+
+# Add a watchtower URI and node alias
+lnaudit generate --watchtower "03abc...@tower.example.com:9911" --alias "my-routing-node"`}</${CodeBlock}>
 
                 <${Heading} as="h3" size="sm" mt="16px" mb="8px" color=${C.ink}>Command Reference</${Heading}>
                 <${TableContainer}>
@@ -485,6 +504,9 @@ lnaudit scan --connect mynode.local:10009 \\
                       <${Tr}><${Td}>Peer Count</${Td}><${Td}>HIGH / MEDIUM</${Td}><${Td}>Zero peers (HIGH) or fewer than 3 peers (MEDIUM)</${Td}></${Tr}>
                       <${Tr}><${Td}>Pending Force-Close</${Td}><${Td}>HIGH</${Td}><${Td}>Detects channels in force-close state with funds in limbo</${Td}></${Tr}>
                       <${Tr}><${Td}>Channel Balance Concentration</${Td}><${Td}>MEDIUM</${Td}><${Td}>Flags channels where local balance exceeds 80% of capacity</${Td}></${Tr}>
+                      <${Tr}><${Td}>Channel Jamming</${Td}><${Td}>HIGH / MEDIUM</${Td}><${Td}>Detects channels with abnormal pending HTLC pressure and aggregate pending HTLC risk</${Td}></${Tr}>
+                      <${Tr}><${Td}>Zero-Conf Channels</${Td}><${Td}>HIGH</${Td}><${Td}>Flags active zero-confirmation channels that carry double-spend risk</${Td}></${Tr}>
+                      <${Tr}><${Td}>Negotiated HTLC Limits</${Td}><${Td}>MEDIUM</${Td}><${Td}>Detects channels that allow high remote HTLC counts, increasing jamming exposure</${Td}></${Tr}>
                       <${Tr}><${Td}>Total Node Exposure</${Td}><${Td}>INFO</${Td}><${Td}>Reports total sats held across wallet and channels</${Td}></${Tr}>
                     </${Tbody}>
                   </${Table}>
@@ -502,7 +524,7 @@ lnaudit scan --connect mynode.local:10009 \\
               <${Section} id="checks" title="Security Checks">
                 <${Text} color=${C.greyMid} mb="10px">
                   Every finding includes a severity level, a risk description, and an actionable remediation step.
-                  Checks are organized into five security modules.
+                  lnaudit now performs 60+ checks across static configuration, local filesystem state, active port probing, and live gRPC runtime state.
                 </${Text}>
 
                 <${Heading} as="h3" size="sm" mt="6px" mb="8px" color=${C.ink}>Transport Security</${Heading}>
@@ -516,6 +538,9 @@ lnaudit scan --connect mynode.local:10009 \\
                       <${Tr}><${Td}>TLS Key Type and Bit Strength</${Td}><${Td}>MEDIUM</${Td}><${Td}>Flags RSA keys shorter than 2048 bits and unsupported key types</${Td}></${Tr}>
                       <${Tr}><${Td}>TLS Signature Algorithm</${Td}><${Td}>HIGH</${Td}><${Td}>Detects SHA-1 and MD5 signature algorithms</${Td}></${Tr}>
                       <${Tr}><${Td}>RPC Bound to All Interfaces</${Td}><${Td}>HIGH</${Td}><${Td}>Flags <${Code}>0.0.0.0</${Code}> or <${Code}>::</${Code}> bindings for RPC or REST listeners</${Td}></${Tr}>
+                      <${Tr}><${Td}>REST API TLS Disabled</${Td}><${Td}>CRITICAL</${Td}><${Td}>Flags <${Code}>no-rest-tls=true</${Code}> because REST traffic and macaroons can be intercepted</${Td}></${Tr}>
+                      <${Tr}><${Td}>TLS Key Encryption Disabled</${Td}><${Td}>MEDIUM</${Td}><${Td}>Detects explicit <${Code}>tlsencryptkey=false</${Code}> settings</${Td}></${Tr}>
+                      <${Tr}><${Td}>HTTP Header Timeout</${Td}><${Td}>LOW / POLICY</${Td}><${Td}>Documents protection against Slowloris-style REST header attacks</${Td}></${Tr}>
                       <${Tr}><${Td}>External IP with Tor Enabled</${Td}><${Td}>HIGH</${Td}><${Td}>Detects clearnet IP exposure while Tor is configured</${Td}></${Tr}>
                       <${Tr}><${Td}>P2P Listener on All Interfaces</${Td}><${Td}>MEDIUM</${Td}><${Td}>Increases node network footprint without Tor</${Td}></${Tr}>
                       <${Tr}><${Td}>NAT / UPnP Enabled</${Td}><${Td}>MEDIUM</${Td}><${Td}>Automatic router port forwarding bypasses firewall controls</${Td}></${Tr}>
@@ -554,6 +579,8 @@ lnaudit scan --connect mynode.local:10009 \\
                       <${Tr}><${Td}>Stray Macaroon Files</${Td}><${Td}>CRITICAL / HIGH</${Td}><${Td}>Macaroon files found outside the LND data directory</${Td}></${Tr}>
                       <${Tr}><${Td}>noseedbackup Enabled</${Td}><${Td}>CRITICAL</${Td}><${Td}>Wallet seed is never persisted to disk</${Td}></${Tr}>
                       <${Tr}><${Td}>noencryptwallet Enabled</${Td}><${Td}>CRITICAL</${Td}><${Td}>Wallet file stored without encryption</${Td}></${Tr}>
+                      <${Tr}><${Td}>Wallet Auto-Creation</${Td}><${Td}>CRITICAL</${Td}><${Td}>Flags <${Code}>wallet-unlock-allow-create=true</${Code}> because an attacker can inject an adversarial seed at startup</${Td}></${Tr}>
+                      <${Tr}><${Td}>REST CORS Wildcard</${Td}><${Td}>HIGH</${Td}><${Td}>Flags <${Code}>restcors=*</${Code}> because malicious websites can trigger credentialed REST requests</${Td}></${Tr}>
                       <${Tr}><${Td}>Debug Log Level</${Td}><${Td}>HIGH</${Td}><${Td}>Flags <${Code}>debuglevel=trace</${Code}> or <${Code}>debug</${Code}> in production</${Td}></${Tr}>
                       <${Tr}><${Td}>debughtlc Enabled</${Td}><${Td}>MEDIUM</${Td}><${Td}>Debug HTLC mode is active</${Td}></${Tr}>
                       <${Tr}><${Td}>trickledelay=0</${Td}><${Td}>MEDIUM</${Td}><${Td}>Disabling trickle delay aids timing analysis</${Td}></${Tr}>
@@ -589,6 +616,30 @@ lnaudit scan --connect mynode.local:10009 \\
                       <${Tr}><${Td}>Confirmation Depth</${Td}><${Td}>MEDIUM</${Td}><${Td}>Funding confirmation target below 3 blocks</${Td}></${Tr}>
                       <${Tr}><${Td}>Max Channel Size</${Td}><${Td}>MEDIUM</${Td}><${Td}>Channels exceeding 0.1 BTC without Wumbo</${Td}></${Tr}>
                       <${Tr}><${Td}>Max Pending Channels</${Td}><${Td}>LOW</${Td}><${Td}>More than 10 pending channels allowed</${Td}></${Tr}>
+                      <${Tr}><${Td}>Pending HTLC Pressure</${Td}><${Td}>HIGH / MEDIUM</${Td}><${Td}>Live checks identify channels that may be jammed by many pending HTLCs</${Td}></${Tr}>
+                    </${Tbody}>
+                  </${Table}>
+                </${TableContainer}>
+
+                <${Heading} as="h3" size="sm" mt="16px" mb="8px" color=${C.ink}>Policy, Protocol, Payment, and Gossip</${Heading}>
+                <${TableContainer}>
+                  <${Table} size="sm" variant="simple">
+                    <${Thead} bg=${C.greyDark}>
+                      <${Tr}><${Th} color="#FFF">Check</${Th}><${Th} color="#FFF">Severity</${Th}><${Th} color="#FFF">Description</${Th}></${Tr}>
+                    </${Thead}>
+                    <${Tbody}>
+                      <${Tr}><${Td}>Zero-Conf Channels</${Td}><${Td}>CRITICAL / HIGH</${Td}><${Td}>Static and live checks for channels active before funding confirmation</${Td}></${Tr}>
+                      <${Tr}><${Td}>Anchor Channels Disabled</${Td}><${Td}>HIGH</${Td}><${Td}>Flags <${Code}>protocol.no-anchors=true</${Code}> because it weakens force-close fee bumping</${Td}></${Tr}>
+                      <${Tr}><${Td}>Wumbo Channels</${Td}><${Td}>MEDIUM</${Td}><${Td}>Large channels increase the blast radius of compromise or force-close events</${Td}></${Tr}>
+                      <${Tr}><${Td}>Circular Routing</${Td}><${Td}>MEDIUM</${Td}><${Td}>Flags <${Code}>allow-circular-route=true</${Code}> because it enables balance probing and fee extraction</${Td}></${Tr}>
+                      <${Tr}><${Td}>Remote HTLC Limits</${Td}><${Td}>HIGH / MEDIUM</${Td}><${Td}>Static and live checks for high HTLC limits that increase channel-jamming exposure</${Td}></${Tr}>
+                      <${Tr}><${Td}>Weak Timelock Delta</${Td}><${Td}>HIGH</${Td}><${Td}>Flags low <${Code}>bitcoin.timelockdelta</${Code}> values that reduce time to go on-chain safely</${Td}></${Tr}>
+                      <${Tr}><${Td}>Minimum HTLC Size</${Td}><${Td}>LOW</${Td}><${Td}>Flags 1 msat minimum HTLCs that enable cheap spam routing attempts</${Td}></${Tr}>
+                      <${Tr}><${Td}>ECONOMICAL Fee Estimation</${Td}><${Td}>MEDIUM</${Td}><${Td}>Highlights under-fee risk during mempool spikes</${Td}></${Tr}>
+                      <${Tr}><${Td}>HTLC Interceptor Required</${Td}><${Td}>HIGH</${Td}><${Td}>Flags <${Code}>requireinterceptor=true</${Code}> because a crashed interceptor can cause total payment DoS</${Td}></${Tr}>
+                      <${Tr}><${Td}>Autopilot</${Td}><${Td}>HIGH / CRITICAL</${Td}><${Td}>Flags autonomous channel opening, especially with high wallet allocation</${Td}></${Tr}>
+                      <${Tr}><${Td}>Gossip Banning Disabled</${Td}><${Td}>HIGH</${Td}><${Td}>Flags <${Code}>gossip.ban-threshold=0</${Code}> because malicious peers can flood gossip without penalty</${Td}></${Tr}>
+                      <${Tr}><${Td}>Keysend and AMP</${Td}><${Td}>INFO</${Td}><${Td}>Documents unsolicited payment and balance-probing tradeoffs</${Td}></${Tr}>
                     </${Tbody}>
                   </${Table}>
                 </${TableContainer}>
@@ -618,48 +669,60 @@ lnaudit scan --connect mynode.local:10009 \\
 
               <!-- Output Examples -->
               <${Section} id="output" title="Output Examples">
-                <${Heading} as="h3" size="sm" mb="6px" color=${C.ink}>Table Output (Default)</${Heading}>
+                <${Heading} as="h3" size="sm" mb="6px" color=${C.ink}>Human Report Output (Default)</${Heading}>
                 <${CodeBlock}>${`$ lnaudit scan --config ~/.lnd/lnd.conf
 
-lnaudit v0.1.0
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ lnaudit — Security Audit Report
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  CRITICAL  wallet.db has permissions 0644 (too permissive)
-            chmod 0600 ~/.lnd/data/chain/bitcoin/mainnet/wallet.db
+ ■ Transport Security
+ ────────────────────────────────────────────────────────────
 
-  CRITICAL  noseedbackup is enabled
-            Remove noseedbackup from [Application Options] in lnd.conf
+  CRITICAL  REST API TLS is disabled (no-rest-tls=true)
+      REST API traffic is sent in plaintext. Any network
+      observer can intercept RPC credentials, macaroons,
+      payment data, and channel information.
 
-  HIGH      No watchtower client configured
-            Add [wtclient] section with at least one tower URI
+      Recommendation:
+        Remove no-rest-tls=true from lnd.conf immediately.
 
-  HIGH      RPC listener bound to all interfaces (0.0.0.0:10009)
-            Bind rpclisten to 127.0.0.1:10009
+ ■ Policy
+ ────────────────────────────────────────────────────────────
 
-  MEDIUM    Tor onion key is not encrypted on disk
-            Set tor.encryptkey=true in lnd.conf
+  HIGH      Remote HTLC limit is high (default-remote-max-htlcs=483)
+      A high HTLC limit allows an adversary to pin many dust
+      HTLCs on every channel, exhausting commitment space and
+      blocking legitimate payments (channel jamming attack).
 
-Score: 38/100  Critical Risk
-  2 critical  2 high  1 medium`}</${CodeBlock}>
+      Recommendation:
+        Set default-remote-max-htlcs to 30 or lower in lnd.conf.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ Score: 0/100  Critical Risk
+ 12 critical · 11 high · 9 medium · 5 low · 2 info
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`}</${CodeBlock}>
 
                 <${Heading} as="h3" size="sm" mt="16px" mb="6px" color=${C.ink}>Live Scan Output</${Heading}>
                 <${CodeBlock}>${`$ lnaudit scan --connect localhost:10009 --verbose
 
-Connected to LND at localhost:10009
+■ Live
+────────────────────────────────────────────────────────────
 
-  INFO    Port 9735 open: Lightning P2P
-          No action needed unless running a private node behind Tor.
+  HIGH      Channel 823456789 has 25 pending HTLCs (possible jamming)
+      This channel has an unusually high number of pending
+      HTLCs. This may indicate an active channel jamming attack.
 
-  MEDIUM  Port 18443 open: Bitcoin Core RPC (regtest)
-          Bind regtest RPC to 127.0.0.1 or stop the regtest daemon if not needed.
+      Recommendation:
+        Consider disconnecting from this peer or closing the
+        channel. Lower default-remote-max-htlcs in lnd.conf.
 
-  MEDIUM  Node has only 1 peer(s)
-          Connect to additional well-known peers to improve resilience.
+  HIGH      1 zero-conf channel(s) active (500000 sats total capacity)
+      Zero-confirmation channels are active on this node.
+      The channel opener could have double-spent the funding transaction.
 
-  INFO    Total node exposure: 20991459 sats (0.2099 BTC)
-          Ensure watchtowers are active, backups are current, and access controls are tight.
-
-Score: 90/100  Hardened
-  0 critical  0 high  2 medium  0 low  2 info`}</${CodeBlock}>
+      Recommendation:
+        Only use zero-conf channels with explicitly trusted counterparties.`}</${CodeBlock}>
 
                 <${Heading} as="h3" size="sm" mt="16px" mb="6px" color=${C.ink}>JSON Output</${Heading}>
                 <${CodeBlock}>${`{
@@ -743,18 +806,25 @@ Score: 90/100  Hardened
               <!-- Architecture -->
               <${Section} id="architecture" title="Architecture">
                 <${CodeBlock}>${`lnaudit/
-├── cmd/                    # CLI Commands (scan, version)
+├── cmd/                    # CLI Commands and terminal UI
+│   ├── scan.go             # Scan orchestration
+│   ├── generate.go         # Hardened lnd.conf generator
+│   └── spinner.go          # Bubble Tea scan progress UI
 ├── pkg/
-│   ├── scanner/            # Finding Model, Report Engine, Score Calculation
+│   ├── scanner/            # Finding Model and Score Calculation
 │   ├── checks/             # Security Check Implementations
 │   │   ├── permissions.go  # File Permission Auditing, Symlink Detection
 │   │   ├── transport.go    # TLS, RPC Binding, External IP Exposure
 │   │   ├── exposure.go     # P2P Listener, NAT/UPnP, Network Exposure
 │   │   ├── access.go       # Macaroon Auth, Dangerous Flags
 │   │   ├── privacy.go      # Tor Configuration, Channel Safety
+│   │   ├── policy.go       # Channel, Bitcoin, Payment Policy Checks
+│   │   ├── resilience.go   # Protocol, Autopilot, Gossip, TLS Hardening
 │   │   ├── live.go         # Live Checks: Version, Sync, Peers, Balance
+│   │   ├── live_extended.go # Live Jamming, Zero-Conf, HTLC Limits
 │   │   ├── cves.go         # Known CVE Database for LND Versions
 │   │   └── ports.go        # Open Port Scanning
+│   ├── confgen/            # Hardened lnd.conf Generation
 │   ├── grpc/               # gRPC Client Interface and Connection
 │   │   ├── client.go       # LndClient Interface and Response Types
 │   │   ├── connect.go      # TLS + Macaroon Auth, Real Implementation
@@ -815,21 +885,17 @@ make release`}</${CodeBlock}>
                       <${Tr}><${Td}>v0.2.0</${Td}><${Td}>Live Node Security Scanning via gRPC</${Td}><${Td}><${Badge} colorScheme="green">Complete</${Badge}></${Td}></${Tr}>
                       <${Tr}><${Td}>v0.2.0</${Td}><${Td}>Known CVE Database and Version Checking</${Td}><${Td}><${Badge} colorScheme="green">Complete</${Badge}></${Td}></${Tr}>
                       <${Tr}><${Td}>v0.2.0</${Td}><${Td}>Open Port Scanning for LND and Bitcoin Services</${Td}><${Td}><${Badge} colorScheme="green">Complete</${Badge}></${Td}></${Tr}>
-                      <${Tr}><${Td}>v0.3.0</${Td}><${Td}>Confidence Levels on Findings (Certain, Firm, Tentative)</${Td}><${Td}><${Badge} colorScheme="purple">Planned</${Badge}></${Td}></${Tr}>
-                      <${Tr}><${Td}>v0.3.0</${Td}><${Td}>SARIF Output for GitHub Code Scanning and CI/CD Pipelines</${Td}><${Td}><${Badge} colorScheme="purple">Planned</${Badge}></${Td}></${Tr}>
-                      <${Tr}><${Td}>v0.3.0</${Td}><${Td}>Severity Threshold Gating (--fail-on)</${Td}><${Td}><${Badge} colorScheme="purple">Planned</${Badge}></${Td}></${Tr}>
-                      <${Tr}><${Td}>v0.3.0</${Td}><${Td}>Baseline Diffing (Compare Scans, Report Only New Findings)</${Td}><${Td}><${Badge} colorScheme="purple">Planned</${Badge}></${Td}></${Tr}>
-                      <${Tr}><${Td}>v0.4.0</${Td}><${Td}>Standalone HTML Report Generation</${Td}><${Td}><${Badge} colorScheme="purple">Planned</${Badge}></${Td}></${Tr}>
-                      <${Tr}><${Td}>v0.4.0</${Td}><${Td}>Macaroon Permission Auditing</${Td}><${Td}><${Badge} colorScheme="purple">Planned</${Badge}></${Td}></${Tr}>
-                      <${Tr}><${Td}>v0.4.0</${Td}><${Td}>TLS Cipher and Protocol Version Probing</${Td}><${Td}><${Badge} colorScheme="purple">Planned</${Badge}></${Td}></${Tr}>
-                      <${Tr}><${Td}>v0.4.0</${Td}><${Td}>Backup Safety Validation (Freshness, Existence, Encryption)</${Td}><${Td}><${Badge} colorScheme="purple">Planned</${Badge}></${Td}></${Tr}>
-                      <${Tr}><${Td}>v0.5.0</${Td}><${Td}>Scan Profiles (Quick, Full, Compliance)</${Td}><${Td}><${Badge} colorScheme="purple">Planned</${Badge}></${Td}></${Tr}>
-                      <${Tr}><${Td}>v0.5.0</${Td}><${Td}>Custom Check Definitions via YAML Policy Files</${Td}><${Td}><${Badge} colorScheme="purple">Planned</${Badge}></${Td}></${Tr}>
-                      <${Tr}><${Td}>v0.6.0</${Td}><${Td}>Docker Security Checks (Root User, Privileged Mode, Secret Handling)</${Td}><${Td}><${Badge} colorScheme="purple">Planned</${Badge}></${Td}></${Tr}>
-                      <${Tr}><${Td}>v0.6.0</${Td}><${Td}>Kubernetes Security Checks (NetworkPolicy, RBAC, Pod Security)</${Td}><${Td}><${Badge} colorScheme="purple">Planned</${Badge}></${Td}></${Tr}>
-                      <${Tr}><${Td}>Future</${Td}><${Td}>Homebrew and Docker Distribution</${Td}><${Td}><${Badge} colorScheme="purple">Planned</${Badge}></${Td}></${Tr}>
+                      <${Tr}><${Td}>Next Release</${Td}><${Td}>Bubble Tea Scan Progress UI</${Td}><${Td}><${Badge} colorScheme="green">Complete</${Badge}></${Td}></${Tr}>
+                      <${Tr}><${Td}>Next Release</${Td}><${Td}>Rich Finding Output with Recommendations and References</${Td}><${Td}><${Badge} colorScheme="green">Complete</${Badge}></${Td}></${Tr}>
+                      <${Tr}><${Td}>Next Release</${Td}><${Td}>Hardened lnd.conf Generator with Routing and Private Profiles</${Td}><${Td}><${Badge} colorScheme="green">Complete</${Badge}></${Td}></${Tr}>
+                      <${Tr}><${Td}>Next Release</${Td}><${Td}>Expanded Static Checks for LND Security Flags</${Td}><${Td}><${Badge} colorScheme="green">Complete</${Badge}></${Td}></${Tr}>
+                      <${Tr}><${Td}>Next Release</${Td}><${Td}>Live Channel-Jamming, Zero-Conf, and HTLC-Limit Detection</${Td}><${Td}><${Badge} colorScheme="green">Complete</${Badge}></${Td}></${Tr}>
+                      <${Tr}><${Td}>Next</${Td}><${Td}>SARIF Output for GitHub Code Scanning and CI/CD Pipelines</${Td}><${Td}><${Badge} colorScheme="purple">Planned</${Badge}></${Td}></${Tr}>
+                      <${Tr}><${Td}>Next</${Td}><${Td}>Findings-Aware Config Patching (<${Code}>lnaudit suggest-config</${Code}>)</${Td}><${Td}><${Badge} colorScheme="purple">Planned</${Badge}></${Td}></${Tr}>
+                      <${Tr}><${Td}>Next</${Td}><${Td}>Watchtower Connectivity and Health Live Checks</${Td}><${Td}><${Badge} colorScheme="purple">Planned</${Badge}></${Td}></${Tr}>
+                      <${Tr}><${Td}>Next</${Td}><${Td}>Compact / Summary Output Mode</${Td}><${Td}><${Badge} colorScheme="purple">Planned</${Badge}></${Td}></${Tr}>
+                      <${Tr}><${Td}>Future</${Td}><${Td}>Robust LND Version Parsing and CVE Metadata</${Td}><${Td}><${Badge} colorScheme="purple">Planned</${Badge}></${Td}></${Tr}>
                       <${Tr}><${Td}>Future</${Td}><${Td}>Fleet-Level Scanning Across Multiple Nodes</${Td}><${Td}><${Badge} colorScheme="purple">Planned</${Badge}></${Td}></${Tr}>
-                      <${Tr}><${Td}>Future</${Td}><${Td}>Plugin System for Community-Contributed Checks</${Td}><${Td}><${Badge} colorScheme="purple">Planned</${Badge}></${Td}></${Tr}>
                     </${Tbody}>
                   </${Table}>
                 </${TableContainer}>
