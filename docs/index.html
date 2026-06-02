@@ -287,7 +287,7 @@
                   mt="16px"
                 >
                   ${[
-                    ["Current Release", "v0.1.2+"],
+                    ["Current Release", "v0.2.0"],
                     ["Scan Scope", "Static, Live gRPC, and Port Probing"],
                     ["Deployment", "CLI, CI/CD, GitHub Actions"],
                   ].map(([label, value]) => html`
@@ -314,7 +314,7 @@
 
                 <${Box} mt="14px" bg=${C.blueSoft} borderLeft="3px solid" borderColor=${C.blue} borderRadius="4px" p="10px 14px">
                   <${Text} fontSize="0.88rem" color=${C.blue} fontWeight="500">
-                    The next release expands lnaudit into a Lightning infrastructure hardening toolkit: 60+ checks, improved reports, Bubble Tea scan progress, live channel-jamming detection, and a hardened lnd.conf generator.
+                    v0.2.0 expands lnaudit into a Lightning infrastructure hardening toolkit: 60+ checks, improved reports, Bubble Tea scan progress, live channel-jamming detection, and a hardened lnd.conf generator.
                   </${Text}>
                 </${Box}>
               </${Box}>
@@ -354,7 +354,7 @@ sudo mv lnaudit-darwin-arm64 /usr/local/bin/lnaudit`}</${CodeBlock}>
 
                 <${Heading} as="h3" size="sm" mt="16px" mb="6px" color=${C.ink}>Verify Installation</${Heading}>
                 <${CodeBlock}>${`$ lnaudit version
-lnaudit v0.1.2 (commit: abc1234)`}</${CodeBlock}>
+lnaudit v0.2.0 (commit: abc1234)`}</${CodeBlock}>
               </${Section}>
 
               <!-- Usage -->
@@ -885,11 +885,11 @@ make release`}</${CodeBlock}>
                       <${Tr}><${Td}>v0.2.0</${Td}><${Td}>Live Node Security Scanning via gRPC</${Td}><${Td}><${Badge} colorScheme="green">Complete</${Badge}></${Td}></${Tr}>
                       <${Tr}><${Td}>v0.2.0</${Td}><${Td}>Known CVE Database and Version Checking</${Td}><${Td}><${Badge} colorScheme="green">Complete</${Badge}></${Td}></${Tr}>
                       <${Tr}><${Td}>v0.2.0</${Td}><${Td}>Open Port Scanning for LND and Bitcoin Services</${Td}><${Td}><${Badge} colorScheme="green">Complete</${Badge}></${Td}></${Tr}>
-                      <${Tr}><${Td}>Next Release</${Td}><${Td}>Bubble Tea Scan Progress UI</${Td}><${Td}><${Badge} colorScheme="green">Complete</${Badge}></${Td}></${Tr}>
-                      <${Tr}><${Td}>Next Release</${Td}><${Td}>Rich Finding Output with Recommendations and References</${Td}><${Td}><${Badge} colorScheme="green">Complete</${Badge}></${Td}></${Tr}>
-                      <${Tr}><${Td}>Next Release</${Td}><${Td}>Hardened lnd.conf Generator with Routing and Private Profiles</${Td}><${Td}><${Badge} colorScheme="green">Complete</${Badge}></${Td}></${Tr}>
-                      <${Tr}><${Td}>Next Release</${Td}><${Td}>Expanded Static Checks for LND Security Flags</${Td}><${Td}><${Badge} colorScheme="green">Complete</${Badge}></${Td}></${Tr}>
-                      <${Tr}><${Td}>Next Release</${Td}><${Td}>Live Channel-Jamming, Zero-Conf, and HTLC-Limit Detection</${Td}><${Td}><${Badge} colorScheme="green">Complete</${Badge}></${Td}></${Tr}>
+                      <${Tr}><${Td}>v0.2.0</${Td}><${Td}>Bubble Tea Scan Progress UI</${Td}><${Td}><${Badge} colorScheme="green">Complete</${Badge}></${Td}></${Tr}>
+                      <${Tr}><${Td}>v0.2.0</${Td}><${Td}>Rich Finding Output with Recommendations and References</${Td}><${Td}><${Badge} colorScheme="green">Complete</${Badge}></${Td}></${Tr}>
+                      <${Tr}><${Td}>v0.2.0</${Td}><${Td}>Hardened lnd.conf Generator with Routing and Private Profiles</${Td}><${Td}><${Badge} colorScheme="green">Complete</${Badge}></${Td}></${Tr}>
+                      <${Tr}><${Td}>v0.2.0</${Td}><${Td}>Expanded Static Checks for LND Security Flags</${Td}><${Td}><${Badge} colorScheme="green">Complete</${Badge}></${Td}></${Tr}>
+                      <${Tr}><${Td}>v0.2.0</${Td}><${Td}>Live Channel-Jamming, Zero-Conf, and HTLC-Limit Detection</${Td}><${Td}><${Badge} colorScheme="green">Complete</${Badge}></${Td}></${Tr}>
                       <${Tr}><${Td}>Next</${Td}><${Td}>SARIF Output for GitHub Code Scanning and CI/CD Pipelines</${Td}><${Td}><${Badge} colorScheme="purple">Planned</${Badge}></${Td}></${Tr}>
                       <${Tr}><${Td}>Next</${Td}><${Td}>Findings-Aware Config Patching (<${Code}>lnaudit suggest-config</${Code}>)</${Td}><${Td}><${Badge} colorScheme="purple">Planned</${Badge}></${Td}></${Tr}>
                       <${Tr}><${Td}>Next</${Td}><${Td}>Watchtower Connectivity and Health Live Checks</${Td}><${Td}><${Badge} colorScheme="purple">Planned</${Badge}></${Td}></${Tr}>
