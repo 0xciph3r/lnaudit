@@ -122,6 +122,9 @@ r.Add(f)
 for _, f := range checks.CheckExternalIPLeak(cfg) {
 r.Add(f)
 }
+for _, f := range checks.CheckTLSHardening(cfg) {
+r.Add(f)
+}
 
 progress("Checking access controls")
 for _, f := range checks.CheckNoMacaroons(cfg) {
@@ -131,6 +134,9 @@ for _, f := range checks.CheckAdminMacaroonLeaks(paths.DataDir) {
 r.Add(f)
 }
 for _, f := range checks.CheckDangerousFlags(cfg) {
+r.Add(f)
+}
+for _, f := range checks.CheckDangerousFlagsExtended(cfg) {
 r.Add(f)
 }
 
@@ -149,6 +155,28 @@ r.Add(f)
 
 progress("Checking network exposure")
 for _, f := range checks.CheckNetworkExposure(cfg) {
+r.Add(f)
+}
+
+progress("Auditing channel policy")
+for _, f := range checks.CheckChannelPolicy(cfg) {
+r.Add(f)
+}
+for _, f := range checks.CheckBitcoinPolicy(cfg) {
+r.Add(f)
+}
+for _, f := range checks.CheckPaymentSecurity(cfg) {
+r.Add(f)
+}
+
+progress("Checking protocol security")
+for _, f := range checks.CheckProtocolSecurity(cfg) {
+r.Add(f)
+}
+for _, f := range checks.CheckAutopilotSecurity(cfg) {
+r.Add(f)
+}
+for _, f := range checks.CheckGossipSecurity(cfg) {
 r.Add(f)
 }
 }
@@ -191,6 +219,9 @@ fn    func(lngrpc.LndClient) ([]scanner.Finding, error)
 {"peer count", "Checking peer connectivity", checks.CheckPeerCount},
 {"force-close", "Scanning force-close risks", checks.CheckPendingForceClose},
 {"balance", "Auditing balance exposure", checks.CheckLargeLocalBalance},
+{"jamming", "Checking for channel jamming", checks.CheckChannelJamming},
+{"zero-conf", "Detecting zero-conf channels", checks.CheckZeroConfChannels},
+{"htlc-limits", "Auditing HTLC limits", checks.CheckHighHTLCLimits},
 }
 
 for _, lc := range liveChecks {

@@ -11,6 +11,7 @@ import (
 var (
 	genOutput     string
 	genNetwork    string
+	genProfile    string
 	genTor        bool
 	genWatchtower string
 	genAlias      string
@@ -28,7 +29,8 @@ configuration before use. Node-specific settings (chain backend, wallet
 paths, fee policies) are not included.
 
 Examples:
-  lnaudit generate                              # print to stdout
+  lnaudit generate                              # print to stdout (routing profile)
+  lnaudit generate --profile private            # for wallet/private nodes
   lnaudit generate --output hardened.conf        # write to file
   lnaudit generate --tor                         # include Tor config
   lnaudit generate --network testnet             # for testnet
@@ -40,6 +42,7 @@ Examples:
 func init() {
 	generateCmd.Flags().StringVarP(&genOutput, "output", "o", "", "write config to file instead of stdout")
 	generateCmd.Flags().StringVar(&genNetwork, "network", "mainnet", "bitcoin network: mainnet, testnet, regtest, signet")
+	generateCmd.Flags().StringVar(&genProfile, "profile", "routing", "security profile: routing (public node) or private (wallet node)")
 	generateCmd.Flags().BoolVar(&genTor, "tor", false, "include Tor configuration section")
 	generateCmd.Flags().StringVar(&genWatchtower, "watchtower", "", "watchtower URI (pubkey@host:port)")
 	generateCmd.Flags().StringVar(&genAlias, "alias", "", "node alias")
@@ -54,6 +57,16 @@ func runGenerate(cmd *cobra.Command, args []string) error {
 		Tor:        genTor,
 		Watchtower: genWatchtower,
 		Alias:      genAlias,
+	}
+
+	// Validate profile
+	switch genProfile {
+	case "routing":
+		opts.Profile = confgen.ProfileRouting
+	case "private":
+		opts.Profile = confgen.ProfilePrivate
+	default:
+		return fmt.Errorf("invalid profile %q: use 'routing' or 'private'", genProfile)
 	}
 
 	// Validate network
