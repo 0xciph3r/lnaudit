@@ -64,10 +64,12 @@ func Generate(w io.Writer, opts Options) error {
 		sections = append(sections, torSection())
 	}
 
-	sections = append(sections, watchtowerSection(opts))
-	sections = append(sections, autopilotSection())
-	sections = append(sections, debugSection())
-	sections = append(sections, checklistSection(opts))
+	sections = append(sections,
+		watchtowerSection(opts),
+		autopilotSection(),
+		debugSection(),
+		checklistSection(),
+	)
 
 	for i, s := range sections {
 		if _, err := fmt.Fprint(w, s.render()); err != nil {
@@ -90,9 +92,9 @@ func (s section) render() string {
 	return strings.Join(s.lines, "\n") + "\n"
 }
 
-func line(s string) string  { return s }
+func line(s string) string    { return s }
 func comment(s string) string { return "# " + s }
-func blank() string          { return "" }
+func blank() string           { return "" }
 
 func headerSection(opts Options) section {
 	profileDesc := "routing node"
@@ -182,8 +184,10 @@ func applicationSection(opts Options) section {
 	}
 
 	if opts.Alias != "" {
-		lines = append(lines, blank())
-		lines = append(lines, line(fmt.Sprintf("alias=%s", opts.Alias)))
+		lines = append(lines,
+			blank(),
+			line(fmt.Sprintf("alias=%s", opts.Alias)),
+		)
 	}
 
 	if opts.Tor {
@@ -652,7 +656,7 @@ func watchtowerSection(opts Options) section {
 	return section{lines: lines}
 }
 
-func checklistSection(opts Options) section {
+func checklistSection() section {
 	lines := []string{
 		blank(),
 		comment("============================================================"),

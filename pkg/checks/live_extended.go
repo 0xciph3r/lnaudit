@@ -28,8 +28,8 @@ func CheckChannelJamming(client lngrpc.LndClient) ([]scanner.Finding, error) {
 		if ch.NumPendingHTLCs >= jammingThreshold {
 			jammedCount++
 			findings = append(findings, scanner.Finding{
-				ID:     "L-7",
-				Module: "live",
+				ID:       "L-7",
+				Module:   "live",
 				Severity: scanner.High,
 				Title: fmt.Sprintf(
 					"Channel %d has %d pending HTLCs (possible jamming)",
