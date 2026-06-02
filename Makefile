@@ -67,7 +67,7 @@ release: clean ## Cross-compile for all platforms
 
 dev-deps: ## Install development tools
 	go install golang.org/x/tools/cmd/goimports@latest
-	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+	go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
 	@echo "Dev tools installed. Ensure \$$GOPATH/bin is in your PATH."
 
 ## ---------- Help ----------

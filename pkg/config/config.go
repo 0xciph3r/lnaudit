@@ -25,30 +25,30 @@ type LndConfig struct {
 	NAT                  bool   `ini:"nat"`
 
 	// New security-relevant flags
-	NoRestTLS               bool `ini:"no-rest-tls"`
-	TLSEncryptKey           bool `ini:"tlsencryptkey"`
-	TLSEncryptKeyExplicit   bool // true if tlsencryptkey was explicitly set
-	WalletUnlockAllowCreate bool `ini:"wallet-unlock-allow-create"`
-	AllowCircularRoute      bool `ini:"allow-circular-route"`
-	RejectPush              bool `ini:"rejectpush"`
-	RejectPushExplicit      bool // true if rejectpush was explicitly set
-	RejectHTLC              bool `ini:"rejecthtlc"`
-	EnableUpfrontShutdown   bool `ini:"enable-upfront-shutdown"`
-	DefaultRemoteMaxHTLCs   int  `ini:"default-remote-max-htlcs"`
+	NoRestTLS                     bool `ini:"no-rest-tls"`
+	TLSEncryptKey                 bool `ini:"tlsencryptkey"`
+	TLSEncryptKeyExplicit         bool // true if tlsencryptkey was explicitly set
+	WalletUnlockAllowCreate       bool `ini:"wallet-unlock-allow-create"`
+	AllowCircularRoute            bool `ini:"allow-circular-route"`
+	RejectPush                    bool `ini:"rejectpush"`
+	RejectPushExplicit            bool // true if rejectpush was explicitly set
+	RejectHTLC                    bool `ini:"rejecthtlc"`
+	EnableUpfrontShutdown         bool `ini:"enable-upfront-shutdown"`
+	DefaultRemoteMaxHTLCs         int  `ini:"default-remote-max-htlcs"`
 	DefaultRemoteMaxHTLCsExplicit bool
-	MaxCLTVExpiry           int  `ini:"max-cltv-expiry"`
-	MaxCLTVExpiryExplicit   bool
-	ChannelMaxFeeExposure   int64 `ini:"channel-max-fee-exposure"`
-	MinChanSize             int64 `ini:"minchansize"`
-	MinChanSizeExplicit     bool
-	AcceptKeysend           bool `ini:"accept-keysend"`
-	AcceptAMP               bool `ini:"accept-amp"`
-	RequireInterceptor      bool `ini:"requireinterceptor"`
-	NoListen                bool `ini:"nolisten"`
-	RESTCors                string `ini:"restcors"`
-	GCCanceledInvoicesStartup bool `ini:"gc-canceled-invoices-on-startup"`
-	GCCanceledInvoicesFly     bool `ini:"gc-canceled-invoices-on-the-fly"`
-	HTTPHeaderTimeout       string `ini:"http-header-timeout"`
+	MaxCLTVExpiry                 int `ini:"max-cltv-expiry"`
+	MaxCLTVExpiryExplicit         bool
+	ChannelMaxFeeExposure         int64 `ini:"channel-max-fee-exposure"`
+	MinChanSize                   int64 `ini:"minchansize"`
+	MinChanSizeExplicit           bool
+	AcceptKeysend                 bool   `ini:"accept-keysend"`
+	AcceptAMP                     bool   `ini:"accept-amp"`
+	RequireInterceptor            bool   `ini:"requireinterceptor"`
+	NoListen                      bool   `ini:"nolisten"`
+	RESTCors                      string `ini:"restcors"`
+	GCCanceledInvoicesStartup     bool   `ini:"gc-canceled-invoices-on-startup"`
+	GCCanceledInvoicesFly         bool   `ini:"gc-canceled-invoices-on-the-fly"`
+	HTTPHeaderTimeout             string `ini:"http-header-timeout"`
 
 	// Listener configuration (multi-value keys)
 	RPCListeners  []string
@@ -81,15 +81,15 @@ type LndConfig struct {
 
 // BitcoinConfig holds [Bitcoin] section values.
 type BitcoinConfig struct {
-	Active           bool   `ini:"bitcoin.active"`
-	Node             string `ini:"bitcoin.node"`
-	DefaultChanConfs int    `ini:"bitcoin.defaultchanconfs"`
-	Network          string // derived from bitcoin.mainnet, bitcoin.testnet, etc.
-	MinHTLC          int64  `ini:"bitcoin.minhtlc"`
-	MinHTLCExplicit  bool
-	TimelockDelta    int    `ini:"bitcoin.timelockdelta"`
+	Active                bool   `ini:"bitcoin.active"`
+	Node                  string `ini:"bitcoin.node"`
+	DefaultChanConfs      int    `ini:"bitcoin.defaultchanconfs"`
+	Network               string // derived from bitcoin.mainnet, bitcoin.testnet, etc.
+	MinHTLC               int64  `ini:"bitcoin.minhtlc"`
+	MinHTLCExplicit       bool
+	TimelockDelta         int `ini:"bitcoin.timelockdelta"`
 	TimelockDeltaExplicit bool
-	EstimateMode     string `ini:"bitcoin.estimatemode"`
+	EstimateMode          string `ini:"bitcoin.estimatemode"`
 }
 
 // TorConfig holds [tor] section values.
@@ -111,17 +111,17 @@ type WatchtowerClientConfig struct {
 
 // ProtocolConfig holds [protocol] section values.
 type ProtocolConfig struct {
-	Anchors        bool `ini:"protocol.anchors"`
-	ScidAlias      bool `ini:"protocol.option-scid-alias"`
-	ZeroConf       bool `ini:"protocol.zero-conf"`
-	WumboChannels  bool `ini:"protocol.wumbo-channels"`
-	NoAnchors      bool `ini:"protocol.no-anchors"`
+	Anchors       bool `ini:"protocol.anchors"`
+	ScidAlias     bool `ini:"protocol.option-scid-alias"`
+	ZeroConf      bool `ini:"protocol.zero-conf"`
+	WumboChannels bool `ini:"protocol.wumbo-channels"`
+	NoAnchors     bool `ini:"protocol.no-anchors"`
 }
 
 // GossipConfig holds [gossip] section values.
 type GossipConfig struct {
-	SubBatchDelay string `ini:"gossip.sub-batch-delay"`
-	BanThreshold  int    `ini:"gossip.ban-threshold"`
+	SubBatchDelay        string `ini:"gossip.sub-batch-delay"`
+	BanThreshold         int    `ini:"gossip.ban-threshold"`
 	BanThresholdExplicit bool
 }
 

@@ -93,7 +93,7 @@ func writeToFile(opts confgen.Options) error {
 		}
 	}
 
-	f, err := os.OpenFile(genOutput, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+	f, err := os.OpenFile(genOutput, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o600)
 	if err != nil {
 		return fmt.Errorf("creating file: %w", err)
 	}

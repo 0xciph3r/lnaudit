@@ -25,7 +25,7 @@ type Channel struct {
 	// Extended fields for security checks
 	NumPendingHTLCs int
 	ZeroConf        bool
-	PushAmountSat   int64
+	PushAmountSat   uint64
 	RemoteMaxHTLCs  uint32
 	CommitmentType  string
 }

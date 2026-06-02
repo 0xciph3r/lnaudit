@@ -11,9 +11,9 @@ func CheckProtocolSecurity(cfg *config.LndConfig) []scanner.Finding {
 
 	if cfg.Protocol.ZeroConf {
 		findings = append(findings, scanner.Finding{
-			ID:     "R-1",
-			Module: "protocol",
-			Severity: scanner.Critical,
+			ID:          "R-1",
+			Module:      "protocol",
+			Severity:    scanner.Critical,
 			Title:       "Zero-conf channels are enabled (protocol.zero-conf=true)",
 			Description: "Channels are treated as active before they have any on-chain confirmations. The channel opener can double-spend the funding transaction and steal all channel funds. Only safe with explicitly trusted counterparties.",
 			Remediation: "Remove protocol.zero-conf=true from lnd.conf unless all channel partners are fully trusted.",
@@ -129,9 +129,9 @@ func CheckDangerousFlagsExtended(cfg *config.LndConfig) []scanner.Finding {
 
 	if cfg.WalletUnlockAllowCreate {
 		findings = append(findings, scanner.Finding{
-			ID:     "R-8",
-			Module: "access",
-			Severity: scanner.Critical,
+			ID:          "R-8",
+			Module:      "access",
+			Severity:    scanner.Critical,
 			Title:       "Wallet auto-creation is enabled (wallet-unlock-allow-create=true)",
 			Description: "LND will create a new wallet via the unauthenticated WalletUnlocker RPC if none exists at startup. An attacker who connects to the gRPC port first can inject an adversarial seed and control the wallet.",
 			Remediation: "Remove wallet-unlock-allow-create=true from lnd.conf. Create wallets manually.",

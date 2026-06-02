@@ -201,7 +201,7 @@ func (c *realClient) ListChannels() ([]Channel, error) {
 			Private:         ch.Private,
 			NumPendingHTLCs: len(ch.PendingHtlcs),
 			ZeroConf:        ch.ZeroConf,
-			PushAmountSat:   int64(ch.PushAmountSat),
+			PushAmountSat:   ch.PushAmountSat,
 			CommitmentType:  ch.CommitmentType.String(),
 		}
 		if ch.RemoteConstraints != nil {
