@@ -21,6 +21,8 @@ Built for production Lightning infrastructure: routing nodes, exchanges, payment
 - [Features](#features)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
+- [Example Output](#example-output)
+- [Hardened Config Generator](#hardened-config-generator)
 - [Security Modules](#security-modules)
 - [Scoring Methodology](#scoring-methodology)
 - [CI/CD Integration](#cicd-integration)
@@ -51,6 +53,9 @@ Most catastrophic losses in Bitcoin infrastructure have resulted not from crypto
 
 - **Static configuration analysis**: Parse and audit `lnd.conf` without a running node
 - **Live runtime checks**: Connect via gRPC to audit version, sync state, peer count, channel health, and balance exposure
+- **Actionable remediation**: Every finding includes a description, a specific recommendation, and a reference to the real-world incident that motivated the check
+- **Hardened config generator**: Generate a security-hardened `lnd.conf` template with comments explaining every setting and its threat model context
+- **Interactive scan experience**: Bubble Tea-powered spinner and progress tracking during scans with TTY detection for CI compatibility
 - **File permission auditing**: Detect world-readable wallets, credentials, and TLS private keys
 - **Symlink attack detection**: Identify symbolic links to sensitive files that bypass permission checks
 - **TLS certificate validation**: Check expiration, key strength, and self-signed status
@@ -158,6 +163,155 @@ lnaudit scan --min-severity high
 # Quiet mode (only show score)
 lnaudit scan --quiet
 ```
+
+### Generate Hardened Config
+
+```bash
+# Generate a security-hardened lnd.conf to stdout
+lnaudit generate
+
+# Write to file with Tor enabled
+lnaudit generate --tor --output lnd.conf
+```
+
+---
+
+## Example Output
+
+Each finding includes a severity rating, description explaining the risk, a specific recommendation, and a reference to the real-world incident that motivated the check:
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ lnaudit — Security Audit Report
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ ■ Transport Security
+ ────────────────────────────────────────────────────────────
+
+  CRITICAL  gRPC bound to all interfaces: 0.0.0.0:10009
+      The gRPC control plane is exposed to all network
+      interfaces, including the public internet.
+
+      Recommendation:
+        Change rpclisten to 127.0.0.1:10009 in lnd.conf
+      Ref: POST-MORTEM.md#6-nicehash-2017
+
+  CRITICAL  REST API bound to all interfaces: 0.0.0.0:8080
+      The REST API is exposed to all network interfaces.
+
+      Recommendation:
+        Change restlisten to 127.0.0.1:8080 in lnd.conf
+
+ ■ Key Management
+ ────────────────────────────────────────────────────────────
+
+  CRITICAL  Tor onion private key is NOT encrypted on disk
+      The onion service private key is stored in plaintext.
+      A server compromise would expose your hidden service
+      identity.
+
+      Recommendation:
+        Set tor.encryptkey=true in lnd.conf and restart LND.
+      Ref: POST-MORTEM.md#2-bitcoinica--linode-2012
+
+ ■ Access Control
+ ────────────────────────────────────────────────────────────
+
+  CRITICAL  Macaroon authentication is DISABLED
+      The --no-macaroons flag is set, meaning anyone who can
+      reach your gRPC/REST interface has full admin access
+      with no authentication.
+
+      Recommendation:
+        Remove no-macaroons=true from lnd.conf and restart
+        LND.
+      Ref: POST-MORTEM.md#6-nicehash-2017
+
+ ■ Network Privacy
+ ────────────────────────────────────────────────────────────
+
+  MEDIUM    Tor stream isolation is disabled
+      Without stream isolation, all peer connections may
+      share the same Tor circuit. An adversary controlling a
+      Tor exit/relay could correlate your connections.
+
+      Recommendation:
+        Set tor.streamisolation=true in lnd.conf
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ Score: 0/100  Critical Risk
+ 7 critical · 5 high · 3 medium · 2 low · 0 info
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+---
+
+## Hardened Config Generator
+
+Generate a security-hardened `lnd.conf` template with `lnaudit generate`. Every setting includes comments explaining **why** it matters, with references to the real-world incidents that motivated it.
+
+```bash
+# Print to stdout
+lnaudit generate
+
+# Write to file (created with 0600 permissions)
+lnaudit generate --output hardened.conf
+
+# Include Tor configuration
+lnaudit generate --tor
+
+# Target a specific network
+lnaudit generate --network testnet
+
+# Include watchtower URI
+lnaudit generate --watchtower "03abc...@tower.example.com:9911"
+
+# Set node alias
+lnaudit generate --alias "my-routing-node"
+
+# Combine flags
+lnaudit generate --tor --watchtower "03abc...@host:9911" --output lnd.conf
+```
+
+### Example Output
+
+```ini
+# ============================================================
+# lnaudit — Hardened LND Configuration
+# Generated: 2026-06-02
+# Network:   mainnet
+#
+# WARNING: This is a starter template. Review and merge with
+# your existing configuration before use.
+# ============================================================
+
+[Application Options]
+
+# Bind control interfaces to localhost ONLY.
+# Ref: NiceHash breach — exposed management interface led to $64M loss.
+rpclisten=127.0.0.1:10009
+restlisten=127.0.0.1:8080
+
+# Use 'info' level in production. Debug/trace logging can write
+# payment preimages, macaroon data, and peer details to log files.
+debuglevel=info
+
+[tor]
+
+# Route all LND traffic through Tor to hide your node's IP address.
+tor.active=true
+tor.v3=true
+tor.streamisolation=true
+tor.encryptkey=true
+
+[wtclient]
+
+# A watchtower monitors your channels while your node is offline.
+# Ref: Bitfinex breach — unmonitored channels exploited.
+wtclient.active=true
+```
+
+The generated config also includes a **post-generation checklist** for security measures that cannot be set in `lnd.conf`: file permissions, TLS rotation, macaroon hygiene, firewall rules, and chain backend configuration.
 
 ---
 
