@@ -21,6 +21,13 @@ type Channel struct {
 	RemoteBalance int64
 	Active        bool
 	Private       bool
+
+	// Extended fields for security checks
+	NumPendingHTLCs int
+	ZeroConf        bool
+	PushAmountSat   int64
+	RemoteMaxHTLCs  uint32
+	CommitmentType  string
 }
 
 // PendingForceClose represents a channel being force-closed.
