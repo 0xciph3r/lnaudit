@@ -87,8 +87,11 @@ func TestTableWriter_ShowsRemediation(t *testing.T) {
 	TableWriter(&buf, r, false)
 	output := buf.String()
 
-	if !strings.Contains(output, "→") {
-		t.Error("table output should show remediation arrows")
+	if !strings.Contains(output, "Recommendation:") {
+		t.Error("table output should show recommendation label")
+	}
+	if !strings.Contains(output, "rpclisten") {
+		t.Error("table output should show remediation content")
 	}
 }
 
