@@ -111,18 +111,18 @@ func (m scanModel) View() string {
 	// Show completed phases
 	for _, p := range m.phases {
 		if p != m.phase {
-			b.WriteString(fmt.Sprintf("  %s %s\n",
+			fmt.Fprintf(&b, "  %s %s\n",
 				doneStyle.Render("✓"),
 				phaseStyle.Render(p),
-			))
+			)
 		}
 	}
 
 	// Current phase with spinner
-	b.WriteString(fmt.Sprintf("  %s %s\n",
+	fmt.Fprintf(&b, "  %s %s\n",
 		m.spinner.View(),
 		m.phase,
-	))
+	)
 
 	b.WriteString("\n")
 
@@ -137,21 +137,21 @@ func (m scanModel) finalView() string {
 	b.WriteString(phaseStyle.Render(" — security scanner\n\n"))
 
 	for _, p := range m.phases {
-		b.WriteString(fmt.Sprintf("  %s %s\n",
+		fmt.Fprintf(&b, "  %s %s\n",
 			doneStyle.Render("✓"),
 			phaseStyle.Render(p),
-		))
+		)
 	}
 
 	if m.result != nil && m.result.err != nil {
-		b.WriteString(fmt.Sprintf("\n  %s %s\n",
+		fmt.Fprintf(&b, "\n  %s %s\n",
 			errStyle.Render("✗"),
 			errStyle.Render(m.result.err.Error()),
-		))
+		)
 	} else {
-		b.WriteString(fmt.Sprintf("\n  %s\n",
+		fmt.Fprintf(&b, "\n  %s\n",
 			doneStyle.Render("  Scan complete."),
-		))
+		)
 	}
 
 	b.WriteString("\n")

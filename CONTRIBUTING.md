@@ -75,9 +75,22 @@ make coverage          # Generate coverage report
 
 ## Adding a New Security Check
 
-Security checks live in `pkg/checks/`. To add a new check:
+Security checks live in `pkg/checks/`. lnaudit supports two check families:
 
-1. **Choose the right file** based on the module (transport, access, privacy, permissions) or create a new one
+- **Static checks** inspect `lnd.conf`, file permissions, certificates, and local path state. They work before a node is running.
+- **Live checks** use read-only gRPC APIs against a running LND node. They inspect runtime state such as sync status, channels, pending HTLCs, force-closes, and negotiated channel limits.
+
+### Static checks
+
+1. **Choose the right file** based on the module:
+   - `transport.go` — TLS, RPC/REST, bind address hardening
+   - `access.go` — macaroons, wallet/auth flags, credential hygiene
+   - `privacy.go` — Tor, SCID aliases, network privacy
+   - `exposure.go` — listener and NAT exposure
+   - `policy.go` — channel, Bitcoin, payment, and routing policy
+   - `resilience.go` — protocol, autopilot, gossip, and additional hardening
+   - `permissions.go` — filesystem permission checks
+
 2. **Define your check function** returning `[]scanner.Finding`:
 
    ```go
@@ -88,7 +101,31 @@ Security checks live in `pkg/checks/`. To add a new check:
    }
    ```
 
-3. **Use appropriate severity levels:**
+3. **Add parser support** in `pkg/config/config.go` if the check needs a new `lnd.conf` flag. Prefer explicit marker fields such as `FooExplicit bool` when the difference between "unset" and "set to zero/false" matters.
+
+### Live checks
+
+1. Extend `pkg/grpc/client.go` if the check needs additional runtime fields from LND.
+2. Populate those fields in `pkg/grpc/connect.go`.
+3. Update `pkg/grpc/mock.go` when needed for tests.
+4. Define a live check with the gRPC signature:
+
+   ```go
+   func CheckSomethingLive(client lngrpc.LndClient) ([]scanner.Finding, error) {
+       channels, err := client.ListChannels()
+       if err != nil {
+           return nil, fmt.Errorf("something check: %w", err)
+       }
+
+       var findings []scanner.Finding
+       // your logic here
+       return findings, nil
+   }
+   ```
+
+### Severity and output rules
+
+Use appropriate severity levels:
 
    | Severity | When to use |
    |----------|-------------|
@@ -98,10 +135,22 @@ Security checks live in `pkg/checks/`. To add a new check:
    | LOW | Minor hardening opportunity |
    | INFO | Informational, good practice confirmed |
 
-4. **Include remediation** — every finding should tell the user how to fix it
-5. **Wire it up** in `cmd/scan.go` inside the `runScan` function
-6. **Write tests** in the corresponding `_test.go` file
-7. **Update docs** if the check covers a new attack vector
+Every finding must include:
+
+- A stable `ID`
+- A `Module` that matches the report grouping
+- A concise `Title`
+- A clear `Description` of the risk
+- A concrete `Remediation` operators can apply
+- A `Reference` when the check maps to a known incident, CVE, or LND documentation
+
+### Wiring and validation
+
+1. Wire static checks in `cmd/scan.go` inside the config-check section of `executeScan`.
+2. Wire live checks in the `liveChecks` slice in `cmd/scan.go`.
+3. Write tests in the corresponding `_test.go` file.
+4. Update README/docs when the check adds a new attack vector, module, or user-visible output.
+5. Run `go test ./...` before opening a PR.
 
 ## Reporting Security Vulnerabilities
 

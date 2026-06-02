@@ -21,6 +21,8 @@ Built for production Lightning infrastructure: routing nodes, exchanges, payment
 - [Features](#features)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
+- [Example Output](#example-output)
+- [Hardened Config Generator](#hardened-config-generator)
 - [Security Modules](#security-modules)
 - [Scoring Methodology](#scoring-methodology)
 - [CI/CD Integration](#cicd-integration)
@@ -49,16 +51,21 @@ Most catastrophic losses in Bitcoin infrastructure have resulted not from crypto
 
 ## Features
 
-- **Static configuration analysis**: Parse and audit `lnd.conf` without a running node
-- **Live runtime checks**: Connect via gRPC to audit version, sync state, peer count, channel health, and balance exposure
+- **Static configuration analysis**: Parse and audit `lnd.conf` without a running node, including TLS, RPC/REST, macaroons, Tor, channel policy, autopilot, gossip, payment, and protocol hardening
+- **Live runtime checks**: Connect via gRPC to audit version, sync state, peer count, force-close state, balance exposure, pending HTLC pressure, zero-conf channels, and negotiated HTLC limits
+- **Actionable remediation**: Every finding includes a description, a specific recommendation, and a reference to the real-world incident that motivated the check
+- **Hardened config generator**: Generate a security-hardened `lnd.conf` template with comments explaining every setting and its threat model context
+- **Interactive scan experience**: Bubble Tea-powered spinner and progress tracking during scans with TTY detection for CI compatibility
 - **File permission auditing**: Detect world-readable wallets, credentials, and TLS private keys
 - **Symlink attack detection**: Identify symbolic links to sensitive files that bypass permission checks
 - **TLS certificate validation**: Check expiration, key strength, and self-signed status
 - **Network exposure analysis**: Detect binds to `0.0.0.0`, UPnP, and non-loopback listeners
 - **Privacy leak detection**: Audit Tor configuration, SCID aliases, and clearnet IP disclosure
+- **Channel-jamming awareness**: Detect risky HTLC limits in configuration and live channels with abnormal pending HTLC counts
+- **Protocol risk detection**: Flag zero-conf, no-anchor, wumbo, circular routing, weak timelocks, and unsafe fee-estimation choices
 - **CVE mapping**: Cross-reference running LND version against known vulnerabilities
 - **Port scanning**: Probe common Bitcoin and LND ports for unexpected exposure
-- **Multiple output formats**: Human-readable tables, JSON for automation, SARIF for GitHub Code Scanning
+- **Multiple output formats**: Human-readable reports for operators and JSON for automation
 - **CI/CD gates**: Exit with non-zero status on high-severity findings
 
 ---
@@ -144,6 +151,14 @@ Run both config and live checks:
 lnaudit scan --config ~/.lnd/lnd.conf --connect localhost:10009
 ```
 
+### What Each Scan Mode Covers
+
+| Mode | Source | Checks |
+|------|--------|--------|
+| Static | `lnd.conf`, data directory, local filesystem | RPC/REST binding, TLS hardening, macaroon auth, wallet creation safety, Tor privacy, watchtower config, channel policy, Bitcoin policy, payment settings, protocol flags, autopilot, gossip banning, file permissions |
+| Live | gRPC read-only APIs | LND version vs CVEs, chain and graph sync, peer count, force-close state, balance exposure, active zero-conf channels, high pending HTLC counts, negotiated remote HTLC limits |
+| Active network | Local port probing | Unexpected exposure on common LND and Bitcoin service ports |
+
 ### CI/CD Integration
 
 Fail builds on high-severity findings:
@@ -159,24 +174,219 @@ lnaudit scan --min-severity high
 lnaudit scan --quiet
 ```
 
+### Generate Hardened Config
+
+```bash
+# Generate a security-hardened lnd.conf to stdout
+lnaudit generate
+
+# Generate for a private wallet node
+lnaudit generate --profile private
+
+# Generate for a public routing node
+lnaudit generate --profile routing
+
+# Write to file with Tor enabled
+lnaudit generate --tor --output lnd.conf
+```
+
+---
+
+## Example Output
+
+Each finding includes a severity rating, description explaining the risk, a specific recommendation, and a reference to the real-world incident that motivated the check:
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ lnaudit — Security Audit Report
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ ■ Transport Security
+ ────────────────────────────────────────────────────────────
+
+  CRITICAL  gRPC bound to all interfaces: 0.0.0.0:10009
+      The gRPC control plane is exposed to all network
+      interfaces, including the public internet.
+
+      Recommendation:
+        Change rpclisten to 127.0.0.1:10009 in lnd.conf
+      Ref: POST-MORTEM.md#6-nicehash-2017
+
+  CRITICAL  REST API bound to all interfaces: 0.0.0.0:8080
+      The REST API is exposed to all network interfaces.
+
+      Recommendation:
+        Change restlisten to 127.0.0.1:8080 in lnd.conf
+
+ ■ Key Management
+ ────────────────────────────────────────────────────────────
+
+  CRITICAL  Tor onion private key is NOT encrypted on disk
+      The onion service private key is stored in plaintext.
+      A server compromise would expose your hidden service
+      identity.
+
+      Recommendation:
+        Set tor.encryptkey=true in lnd.conf and restart LND.
+      Ref: POST-MORTEM.md#2-bitcoinica--linode-2012
+
+ ■ Access Control
+ ────────────────────────────────────────────────────────────
+
+  CRITICAL  Macaroon authentication is DISABLED
+      The --no-macaroons flag is set, meaning anyone who can
+      reach your gRPC/REST interface has full admin access
+      with no authentication.
+
+      Recommendation:
+        Remove no-macaroons=true from lnd.conf and restart
+        LND.
+      Ref: POST-MORTEM.md#6-nicehash-2017
+
+ ■ Network Privacy
+ ────────────────────────────────────────────────────────────
+
+  MEDIUM    Tor stream isolation is disabled
+      Without stream isolation, all peer connections may
+      share the same Tor circuit. An adversary controlling a
+      Tor exit/relay could correlate your connections.
+
+      Recommendation:
+        Set tor.streamisolation=true in lnd.conf
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ Score: 0/100  Critical Risk
+ 7 critical · 5 high · 3 medium · 2 low · 0 info
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+---
+
+## Hardened Config Generator
+
+Generate a security-hardened `lnd.conf` template with `lnaudit generate`. Every setting includes comments explaining **why** it matters, with references to the real-world incidents that motivated it.
+
+```bash
+# Print to stdout
+lnaudit generate
+
+# Generate profile-specific templates
+lnaudit generate --profile routing
+lnaudit generate --profile private
+
+# Write to file (created with 0600 permissions)
+lnaudit generate --output hardened.conf
+
+# Include Tor configuration
+lnaudit generate --tor
+
+# Target a specific network
+lnaudit generate --network testnet
+
+# Include watchtower URI
+lnaudit generate --watchtower "03abc...@tower.example.com:9911"
+
+# Set node alias
+lnaudit generate --alias "my-routing-node"
+
+# Combine flags
+lnaudit generate --profile routing --tor --watchtower "03abc...@host:9911" --output lnd.conf
+```
+
+Profiles control whether the template is optimized for a public routing node or a private wallet node:
+
+| Profile | Use case | Behavior |
+|---------|----------|----------|
+| `routing` | Public Lightning routing node | Keeps routing functionality enabled while hardening RPC, TLS, Tor, gossip, channel policy, watchtower, and fee-safety settings |
+| `private` | Wallet/private node that primarily sends and receives | Adds more restrictive defaults such as disabling inbound P2P and rejecting forwarded HTLCs |
+
+### Example Output
+
+```ini
+# ============================================================
+# lnaudit — Hardened LND Configuration
+# Generated: 2026-06-02
+# Network:   mainnet
+# Profile:   routing node
+#
+# Settings are categorized as:
+#   [Active]  — Recommended hardening, emitted as key=value
+#   [Policy]  — Operational choice, commented for review
+#   [Warning] — Dangerous flag, never enable in production
+# ============================================================
+
+[Application Options]
+
+# Bind control interfaces to localhost ONLY.
+# Ref: NiceHash breach — exposed management interface led to $64M loss.
+rpclisten=127.0.0.1:10009
+restlisten=127.0.0.1:8080
+
+# Use 'info' level in production. Debug/trace logging can write
+# payment preimages, macaroon data, and peer details to log files.
+debuglevel=info
+
+# Encrypt the TLS private key on disk.
+tlsencryptkey=true
+
+# Prevent Slowloris-style REST header attacks.
+http-header-timeout=5s
+
+[Bitcoin]
+
+bitcoin.active=true
+bitcoin.mainnet=true
+bitcoin.defaultchanconfs=3
+bitcoin.estimatemode=CONSERVATIVE
+bitcoin.timelockdelta=80
+bitcoin.minhtlc=1000
+
+[protocol]
+
+protocol.option-scid-alias=true
+protocol.anchors=true
+
+# Do not enable protocol.zero-conf unless all counterparties are trusted.
+
+[tor]
+
+# Route all LND traffic through Tor to hide your node's IP address.
+tor.active=true
+tor.v3=true
+tor.streamisolation=true
+tor.encryptkey=true
+
+[wtclient]
+
+# A watchtower monitors your channels while your node is offline.
+# Ref: Bitfinex breach — unmonitored channels exploited.
+wtclient.active=true
+```
+
+The generated config also includes a **post-generation checklist** for security measures that cannot be set in `lnd.conf`: file permissions, TLS rotation, macaroon hygiene, firewall rules, and chain backend configuration.
+
 ---
 
 ## Security Modules
 
-lnaudit performs 40+ security checks across seven modules:
+lnaudit performs 60+ security checks across static configuration, filesystem, network exposure, and live gRPC runtime state:
 
 | Module | Checks | Key Threats Mitigated |
 |--------|--------|----------------------|
-| **Transport Security** | TLS certificate validation, cipher suite analysis, RPC binding audit | Expired certificates, weak crypto, API exposure |
+| **Transport Security** | TLS certificate validation, encrypted TLS key checks, REST TLS checks, RPC/REST binding audit, HTTP header timeout review | Expired certificates, weak crypto, plaintext REST, API exposure, Slowloris-style REST attacks |
 | **Key Management** | File permission auditing on wallet.db, TLS keys, macaroons, channel backups | World-readable credentials, key leaks |
-| **Access Control** | Macaroon authentication status, stray macaroon detection, dangerous flags | Disabled auth (`--no-macaroons`), debug logging with secrets |
+| **Access Control** | Macaroon authentication status, stray macaroon detection, wallet unlock safety, REST CORS, dangerous flags | Disabled auth (`--no-macaroons`), seed injection, browser-origin RPC attacks, debug logging with secrets |
 | **Network Privacy** | Tor configuration, stream isolation, SCID aliases, onion key encryption | IP address leaks, V2 onion deprecation, clearnet fallback |
-| **Channel Safety** | Watchtower configuration, confirmation depth, channel limits, force-close detection | Unmonitored channels, low confirmation targets |
+| **Channel Safety** | Watchtower configuration, confirmation depth, channel limits, force-close detection, pending HTLC pressure | Unmonitored channels, low confirmation targets, channel jamming, stuck HTLCs |
+| **Policy** | Circular routing, push-amount channels, HTLC limits, CLTV expiry, timelock delta, minimum HTLC size, fee estimation, autopilot | Balance probing, griefing, channel jamming, liquidity lockup, under-fee'd transactions, autonomous fund deployment |
+| **Protocol** | Zero-conf, anchor channels, wumbo channels, SCID aliases | Double-spend risk, weak force-close fee bumping, large-channel blast radius, channel UTXO linkage |
+| **Payment Security** | Keysend, AMP, HTLC interceptor, canceled invoice garbage collection | Unsolicited payment spam, balance probing, interceptor-induced payment DoS, invoice database bloat |
+| **Gossip Security** | Gossip ban threshold, graph sync settings, gossip rate limiting guidance | Gossip flooding, CPU/memory exhaustion, eclipse risk |
 | **Network Exposure** | P2P and RPC listener binding, UPnP, NAT configuration | Bind to 0.0.0.0, automatic port forwarding |
 | **Port Scanning** | Active probing of common LND and Bitcoin Core ports | Unexpected service exposure, open gRPC/REST APIs |
-| **Live Checks** | Version vs CVE database, chain sync, peer connectivity, balance thresholds | Running vulnerable versions, offline nodes, fund exposure |
+| **Live Checks** | Version vs CVE database, chain sync, peer connectivity, force-close state, balance thresholds, zero-conf channels, high pending HTLCs, negotiated HTLC limits | Running vulnerable versions, offline nodes, fund exposure, active channel jamming, unsafe live channel state |
 
-For detailed technical specifications, see [ARCHITECTURE.md](docs/ARCHITECTURE.md).
+The scanner is intentionally split between static checks that can run before deployment and live checks that require read-only gRPC access to a running node.
 
 ---
 
@@ -266,33 +476,34 @@ fi
 ```
 lnaudit/
 ├── cmd/                        # CLI entry points
-│   └── lnaudit/
-│       └── main.go            # Command dispatch (scan, version)
+│   ├── scan.go                 # scan command orchestration
+│   ├── generate.go             # hardened lnd.conf generator
+│   └── spinner.go              # Bubble Tea scan progress UI
 ├── pkg/
 │   ├── scanner/               # Core scanning engine
-│   │   ├── scanner.go         # Finding aggregation and scoring
-│   │   ├── finding.go         # Finding type and severity
-│   │   └── report.go          # Report generation
+│   │   └── scanner.go         # Finding type, aggregation, and scoring
 │   ├── checks/                # Security check implementations
 │   │   ├── permissions.go     # File permission auditing
 │   │   ├── transport.go       # TLS and RPC security
 │   │   ├── exposure.go        # Network exposure analysis
 │   │   ├── access.go          # Access control and auth checks
 │   │   ├── privacy.go         # Tor and privacy auditing
+│   │   ├── policy.go          # Channel, Bitcoin, payment policy checks
+│   │   ├── resilience.go      # Protocol, autopilot, gossip, TLS hardening checks
 │   │   ├── live.go            # Live node checks via gRPC
+│   │   ├── live_extended.go   # Live channel jamming and zero-conf checks
 │   │   ├── cves.go            # CVE database and version mapping
 │   │   └── ports.go           # Port scanning
+│   ├── confgen/               # Hardened lnd.conf generation
 │   ├── grpc/                  # gRPC client interface
 │   │   ├── client.go          # LndClient interface
 │   │   ├── connect.go         # Real gRPC client implementation
 │   │   └── mock.go            # Mock client for testing
 │   ├── config/                # LND configuration parser
 │   ├── lndpath/               # Path detection utilities
-│   └── report/                # Output formatters (table, JSON, SARIF)
+│   └── report/                # Output formatters (table, JSON)
 ├── docs/
-│   ├── POST-MORTEM.md         # Analysis of real-world incidents
-│   ├── ARCHITECTURE.md        # Technical design documentation
-│   └── SECURITY.md            # Security policy and vulnerability reporting
+│   └── POST-MORTEM.md         # Analysis of real-world incidents
 ├── .github/
 │   ├── workflows/             # CI/CD pipelines
 │   ├── ISSUE_TEMPLATE/        # Issue templates

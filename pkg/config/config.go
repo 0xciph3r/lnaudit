@@ -24,6 +24,32 @@ type LndConfig struct {
 	Alias                string `ini:"alias"`
 	NAT                  bool   `ini:"nat"`
 
+	// New security-relevant flags
+	NoRestTLS                     bool `ini:"no-rest-tls"`
+	TLSEncryptKey                 bool `ini:"tlsencryptkey"`
+	TLSEncryptKeyExplicit         bool // true if tlsencryptkey was explicitly set
+	WalletUnlockAllowCreate       bool `ini:"wallet-unlock-allow-create"`
+	AllowCircularRoute            bool `ini:"allow-circular-route"`
+	RejectPush                    bool `ini:"rejectpush"`
+	RejectPushExplicit            bool // true if rejectpush was explicitly set
+	RejectHTLC                    bool `ini:"rejecthtlc"`
+	EnableUpfrontShutdown         bool `ini:"enable-upfront-shutdown"`
+	DefaultRemoteMaxHTLCs         int  `ini:"default-remote-max-htlcs"`
+	DefaultRemoteMaxHTLCsExplicit bool
+	MaxCLTVExpiry                 int `ini:"max-cltv-expiry"`
+	MaxCLTVExpiryExplicit         bool
+	ChannelMaxFeeExposure         int64 `ini:"channel-max-fee-exposure"`
+	MinChanSize                   int64 `ini:"minchansize"`
+	MinChanSizeExplicit           bool
+	AcceptKeysend                 bool   `ini:"accept-keysend"`
+	AcceptAMP                     bool   `ini:"accept-amp"`
+	RequireInterceptor            bool   `ini:"requireinterceptor"`
+	NoListen                      bool   `ini:"nolisten"`
+	RESTCors                      string `ini:"restcors"`
+	GCCanceledInvoicesStartup     bool   `ini:"gc-canceled-invoices-on-startup"`
+	GCCanceledInvoicesFly         bool   `ini:"gc-canceled-invoices-on-the-fly"`
+	HTTPHeaderTimeout             string `ini:"http-header-timeout"`
+
 	// Listener configuration (multi-value keys)
 	RPCListeners  []string
 	RESTListeners []string
@@ -46,16 +72,24 @@ type LndConfig struct {
 	// [gossip]
 	Gossip GossipConfig
 
+	// [autopilot]
+	Autopilot AutopilotConfig
+
 	// Raw provides access to any key not explicitly modeled above.
 	Raw *ini.File
 }
 
 // BitcoinConfig holds [Bitcoin] section values.
 type BitcoinConfig struct {
-	Active           bool   `ini:"bitcoin.active"`
-	Node             string `ini:"bitcoin.node"`
-	DefaultChanConfs int    `ini:"bitcoin.defaultchanconfs"`
-	Network          string // derived from bitcoin.mainnet, bitcoin.testnet, etc.
+	Active                bool   `ini:"bitcoin.active"`
+	Node                  string `ini:"bitcoin.node"`
+	DefaultChanConfs      int    `ini:"bitcoin.defaultchanconfs"`
+	Network               string // derived from bitcoin.mainnet, bitcoin.testnet, etc.
+	MinHTLC               int64  `ini:"bitcoin.minhtlc"`
+	MinHTLCExplicit       bool
+	TimelockDelta         int `ini:"bitcoin.timelockdelta"`
+	TimelockDeltaExplicit bool
+	EstimateMode          string `ini:"bitcoin.estimatemode"`
 }
 
 // TorConfig holds [tor] section values.
@@ -77,13 +111,24 @@ type WatchtowerClientConfig struct {
 
 // ProtocolConfig holds [protocol] section values.
 type ProtocolConfig struct {
-	Anchors   bool `ini:"protocol.anchors"`
-	ScidAlias bool `ini:"protocol.option-scid-alias"`
+	Anchors       bool `ini:"protocol.anchors"`
+	ScidAlias     bool `ini:"protocol.option-scid-alias"`
+	ZeroConf      bool `ini:"protocol.zero-conf"`
+	WumboChannels bool `ini:"protocol.wumbo-channels"`
+	NoAnchors     bool `ini:"protocol.no-anchors"`
 }
 
 // GossipConfig holds [gossip] section values.
 type GossipConfig struct {
-	SubBatchDelay string `ini:"gossip.sub-batch-delay"`
+	SubBatchDelay        string `ini:"gossip.sub-batch-delay"`
+	BanThreshold         int    `ini:"gossip.ban-threshold"`
+	BanThresholdExplicit bool
+}
+
+// AutopilotConfig holds [autopilot] section values.
+type AutopilotConfig struct {
+	Active     bool    `ini:"autopilot.active"`
+	Allocation float64 `ini:"autopilot.allocation"`
 }
 
 // maxConfigSize is the largest config file we'll read (1 MB).
@@ -143,6 +188,32 @@ func ParseBytes(data []byte) (*LndConfig, error) {
 		c.Alias = appSec.Key("alias").String()
 		c.NAT, _ = appSec.Key("nat").Bool()
 
+		// New security-relevant flags
+		c.NoRestTLS, _ = appSec.Key("no-rest-tls").Bool()
+		c.TLSEncryptKey, _ = appSec.Key("tlsencryptkey").Bool()
+		c.TLSEncryptKeyExplicit = appSec.Key("tlsencryptkey").String() != ""
+		c.WalletUnlockAllowCreate, _ = appSec.Key("wallet-unlock-allow-create").Bool()
+		c.AllowCircularRoute, _ = appSec.Key("allow-circular-route").Bool()
+		c.RejectPush, _ = appSec.Key("rejectpush").Bool()
+		c.RejectPushExplicit = appSec.Key("rejectpush").String() != ""
+		c.RejectHTLC, _ = appSec.Key("rejecthtlc").Bool()
+		c.EnableUpfrontShutdown, _ = appSec.Key("enable-upfront-shutdown").Bool()
+		c.DefaultRemoteMaxHTLCs, _ = appSec.Key("default-remote-max-htlcs").Int()
+		c.DefaultRemoteMaxHTLCsExplicit = appSec.Key("default-remote-max-htlcs").String() != ""
+		c.MaxCLTVExpiry, _ = appSec.Key("max-cltv-expiry").Int()
+		c.MaxCLTVExpiryExplicit = appSec.Key("max-cltv-expiry").String() != ""
+		c.ChannelMaxFeeExposure, _ = appSec.Key("channel-max-fee-exposure").Int64()
+		c.MinChanSize, _ = appSec.Key("minchansize").Int64()
+		c.MinChanSizeExplicit = appSec.Key("minchansize").String() != ""
+		c.AcceptKeysend, _ = appSec.Key("accept-keysend").Bool()
+		c.AcceptAMP, _ = appSec.Key("accept-amp").Bool()
+		c.RequireInterceptor, _ = appSec.Key("requireinterceptor").Bool()
+		c.NoListen, _ = appSec.Key("nolisten").Bool()
+		c.RESTCors = appSec.Key("restcors").String()
+		c.GCCanceledInvoicesStartup, _ = appSec.Key("gc-canceled-invoices-on-startup").Bool()
+		c.GCCanceledInvoicesFly, _ = appSec.Key("gc-canceled-invoices-on-the-fly").Bool()
+		c.HTTPHeaderTimeout = appSec.Key("http-header-timeout").String()
+
 		c.RPCListeners = readMulti(appSec, "rpclisten")
 		c.RESTListeners = readMulti(appSec, "restlisten")
 		c.Listeners = readMulti(appSec, "listen")
@@ -156,9 +227,13 @@ func ParseBytes(data []byte) (*LndConfig, error) {
 		c.Bitcoin.Active, _ = btcSec.Key("bitcoin.active").Bool()
 		c.Bitcoin.Node = btcSec.Key("bitcoin.node").String()
 		c.Bitcoin.DefaultChanConfs, _ = btcSec.Key("bitcoin.defaultchanconfs").Int()
+		c.Bitcoin.MinHTLC, _ = btcSec.Key("bitcoin.minhtlc").Int64()
+		c.Bitcoin.MinHTLCExplicit = btcSec.Key("bitcoin.minhtlc").String() != ""
+		c.Bitcoin.TimelockDelta, _ = btcSec.Key("bitcoin.timelockdelta").Int()
+		c.Bitcoin.TimelockDeltaExplicit = btcSec.Key("bitcoin.timelockdelta").String() != ""
+		c.Bitcoin.EstimateMode = btcSec.Key("bitcoin.estimatemode").String()
 
 		// Derive network from the explicit boolean flags.
-		// LND only allows one to be set; we check in priority order.
 		switch {
 		case keyIsTrue(btcSec, "bitcoin.mainnet"):
 			c.Bitcoin.Network = "mainnet"
@@ -199,12 +274,24 @@ func ParseBytes(data []byte) (*LndConfig, error) {
 	if protoSec != nil {
 		c.Protocol.Anchors, _ = protoSec.Key("protocol.anchors").Bool()
 		c.Protocol.ScidAlias, _ = protoSec.Key("protocol.option-scid-alias").Bool()
+		c.Protocol.ZeroConf, _ = protoSec.Key("protocol.zero-conf").Bool()
+		c.Protocol.WumboChannels, _ = protoSec.Key("protocol.wumbo-channels").Bool()
+		c.Protocol.NoAnchors, _ = protoSec.Key("protocol.no-anchors").Bool()
 	}
 
 	// [gossip]
 	gossSec := cfg.Section("gossip")
 	if gossSec != nil {
 		c.Gossip.SubBatchDelay = gossSec.Key("gossip.sub-batch-delay").String()
+		c.Gossip.BanThreshold, _ = gossSec.Key("gossip.ban-threshold").Int()
+		c.Gossip.BanThresholdExplicit = gossSec.Key("gossip.ban-threshold").String() != ""
+	}
+
+	// [autopilot]
+	autoSec := cfg.Section("autopilot")
+	if autoSec != nil {
+		c.Autopilot.Active, _ = autoSec.Key("autopilot.active").Bool()
+		c.Autopilot.Allocation, _ = autoSec.Key("autopilot.allocation").Float64()
 	}
 
 	return c, nil

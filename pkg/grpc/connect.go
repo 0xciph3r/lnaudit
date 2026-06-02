@@ -191,15 +191,23 @@ func (c *realClient) ListChannels() ([]Channel, error) {
 
 	channels := make([]Channel, len(resp.Channels))
 	for i, ch := range resp.Channels {
-		channels[i] = Channel{
-			ChanID:        ch.ChanId,
-			RemotePubkey:  truncate(ch.RemotePubkey),
-			Capacity:      ch.Capacity,
-			LocalBalance:  ch.LocalBalance,
-			RemoteBalance: ch.RemoteBalance,
-			Active:        ch.Active,
-			Private:       ch.Private,
+		c := Channel{
+			ChanID:          ch.ChanId,
+			RemotePubkey:    truncate(ch.RemotePubkey),
+			Capacity:        ch.Capacity,
+			LocalBalance:    ch.LocalBalance,
+			RemoteBalance:   ch.RemoteBalance,
+			Active:          ch.Active,
+			Private:         ch.Private,
+			NumPendingHTLCs: len(ch.PendingHtlcs),
+			ZeroConf:        ch.ZeroConf,
+			PushAmountSat:   ch.PushAmountSat,
+			CommitmentType:  ch.CommitmentType.String(),
 		}
+		if ch.RemoteConstraints != nil {
+			c.RemoteMaxHTLCs = ch.RemoteConstraints.MaxAcceptedHtlcs
+		}
+		channels[i] = c
 	}
 
 	return channels, nil
