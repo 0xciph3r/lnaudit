@@ -1,36 +1,38 @@
 package cmd
 
 import (
-	"fmt"
-	"os"
+"fmt"
+"os"
 
-	"github.com/NonsoAmadi10/lnaudit/pkg/checks"
-	"github.com/NonsoAmadi10/lnaudit/pkg/config"
-	lngrpc "github.com/NonsoAmadi10/lnaudit/pkg/grpc"
-	"github.com/NonsoAmadi10/lnaudit/pkg/lndpath"
-	"github.com/NonsoAmadi10/lnaudit/pkg/report"
-	"github.com/NonsoAmadi10/lnaudit/pkg/scanner"
-	"github.com/spf13/cobra"
+tea "github.com/charmbracelet/bubbletea"
+"github.com/NonsoAmadi10/lnaudit/pkg/checks"
+"github.com/NonsoAmadi10/lnaudit/pkg/config"
+lngrpc "github.com/NonsoAmadi10/lnaudit/pkg/grpc"
+"github.com/NonsoAmadi10/lnaudit/pkg/lndpath"
+"github.com/NonsoAmadi10/lnaudit/pkg/report"
+"github.com/NonsoAmadi10/lnaudit/pkg/scanner"
+"github.com/spf13/cobra"
+"golang.org/x/term"
 )
 
 var (
-	configPath   string
-	lndDir       string
-	outputFormat string
-	minSeverity  string
-	failOn       string
-	connectAddr  string
-	macaroonPath string
-	tlsCertPath  string
-	verbose      bool
-	noColor      bool
-	quiet        bool
+configPath   string
+lndDir       string
+outputFormat string
+minSeverity  string
+failOn       string
+connectAddr  string
+macaroonPath string
+tlsCertPath  string
+verbose      bool
+noColor      bool
+quiet        bool
 )
 
 var scanCmd = &cobra.Command{
-	Use:   "scan",
-	Short: "Scan an LND node for security issues",
-	Long: `Scan an LND node's configuration and runtime state for security
+Use:   "scan",
+Short: "Scan an LND node for security issues",
+Long: `Scan an LND node's configuration and runtime state for security
 misconfigurations, weak defaults, and hardening opportunities.
 
 Supports two modes:
@@ -39,228 +41,281 @@ Supports two modes:
 
 If no --config flag is provided, the scanner will attempt to auto-detect
 the LND configuration at common paths (~/.lnd/lnd.conf).`,
-	RunE: runScan,
+RunE: runScan,
 }
 
 func init() {
-	scanCmd.Flags().StringVar(&configPath, "config", "", "path to lnd.conf (auto-detected if not set)")
-	scanCmd.Flags().StringVar(&lndDir, "lnddir", "", "LND data directory (auto-detected if not set)")
-	scanCmd.Flags().StringVar(&outputFormat, "format", "table", "output format: table, json")
-	scanCmd.Flags().StringVar(&minSeverity, "min-severity", "low", "minimum severity to display: critical, high, medium, low, info")
-	scanCmd.Flags().StringVar(&failOn, "fail-on", "critical", "exit 1 if any finding at or above this severity")
-	scanCmd.Flags().StringVar(&connectAddr, "connect", "", "gRPC address of running LND node (e.g., localhost:10009)")
-	scanCmd.Flags().StringVar(&macaroonPath, "macaroon", "", "path to admin.macaroon (auto-detected if --connect is set)")
-	scanCmd.Flags().StringVar(&tlsCertPath, "tlscert", "", "path to tls.cert for gRPC (auto-detected from lnddir)")
-	scanCmd.Flags().BoolVar(&verbose, "verbose", false, "show INFO-level findings")
-	scanCmd.Flags().BoolVar(&noColor, "no-color", false, "disable colored output")
-	scanCmd.Flags().BoolVar(&quiet, "quiet", false, "only output the score")
+scanCmd.Flags().StringVar(&configPath, "config", "", "path to lnd.conf (auto-detected if not set)")
+scanCmd.Flags().StringVar(&lndDir, "lnddir", "", "LND data directory (auto-detected if not set)")
+scanCmd.Flags().StringVar(&outputFormat, "format", "table", "output format: table, json")
+scanCmd.Flags().StringVar(&minSeverity, "min-severity", "low", "minimum severity to display: critical, high, medium, low, info")
+scanCmd.Flags().StringVar(&failOn, "fail-on", "critical", "exit 1 if any finding at or above this severity")
+scanCmd.Flags().StringVar(&connectAddr, "connect", "", "gRPC address of running LND node (e.g., localhost:10009)")
+scanCmd.Flags().StringVar(&macaroonPath, "macaroon", "", "path to admin.macaroon (auto-detected if --connect is set)")
+scanCmd.Flags().StringVar(&tlsCertPath, "tlscert", "", "path to tls.cert for gRPC (auto-detected from lnddir)")
+scanCmd.Flags().BoolVar(&verbose, "verbose", false, "show INFO-level findings")
+scanCmd.Flags().BoolVar(&noColor, "no-color", false, "disable colored output")
+scanCmd.Flags().BoolVar(&quiet, "quiet", false, "only output the score")
 
-	rootCmd.AddCommand(scanCmd)
+rootCmd.AddCommand(scanCmd)
+}
+
+// isInteractive returns true when we should show the Bubble Tea UI.
+func isInteractive() bool {
+if quiet || outputFormat == "json" || noColor {
+return false
+}
+return term.IsTerminal(int(os.Stderr.Fd()))
+}
+
+// executeScan runs all scan checks with optional progress reporting.
+func executeScan(progress func(string)) (*scanner.Report, []string, error) {
+var warnings []string
+
+// 1. Detect paths
+progress("Detecting LND paths")
+paths, err := lndpath.Detect(lndDir, configPath)
+if err != nil && connectAddr == "" {
+return nil, nil, fmt.Errorf("detecting LND paths: %w", err)
+}
+
+// 2. Parse config
+var cfg *config.LndConfig
+if paths.ConfigFile != "" {
+progress("Parsing configuration")
+cfg, err = config.Parse(paths.ConfigFile)
+if err != nil {
+return nil, nil, fmt.Errorf("parsing config: %w", err)
+}
+if cfg.Bitcoin.Network != "" {
+paths.Network = cfg.Bitcoin.Network
+}
+} else if connectAddr == "" {
+return nil, nil, fmt.Errorf("no lnd.conf found (searched %s). Use --config to specify the path", paths.LndDir)
+}
+
+// 3. Run checks
+r := &scanner.Report{}
+
+if cfg != nil {
+progress("Checking file permissions")
+filePaths := checks.FilePaths{
+WalletDB:         paths.WalletDB(),
+TLSKey:           paths.TLSKey,
+AdminMacaroon:    paths.AdminMacaroon(),
+ReadonlyMacaroon: paths.ReadonlyMacaroon(),
+InvoiceMacaroon:  paths.InvoiceMacaroon(),
+ChannelBackup:    paths.ChannelBackup(),
+ConfigFile:       paths.ConfigFile,
+}
+for _, f := range checks.CheckFilePermissions(filePaths) {
+r.Add(f)
+}
+
+progress("Auditing transport security")
+for _, f := range checks.CheckTLSCert(paths.TLSCert) {
+r.Add(f)
+}
+for _, f := range checks.CheckRPCBindAddress(cfg) {
+r.Add(f)
+}
+for _, f := range checks.CheckExternalIPLeak(cfg) {
+r.Add(f)
+}
+
+progress("Checking access controls")
+for _, f := range checks.CheckNoMacaroons(cfg) {
+r.Add(f)
+}
+for _, f := range checks.CheckAdminMacaroonLeaks(paths.DataDir) {
+r.Add(f)
+}
+for _, f := range checks.CheckDangerousFlags(cfg) {
+r.Add(f)
+}
+
+progress("Scanning network privacy")
+for _, f := range checks.CheckTorConfig(cfg) {
+r.Add(f)
+}
+for _, f := range checks.CheckPrivacySettings(cfg) {
+r.Add(f)
+}
+
+progress("Auditing channel safety")
+for _, f := range checks.CheckChannelSafety(cfg) {
+r.Add(f)
+}
+
+progress("Checking network exposure")
+for _, f := range checks.CheckNetworkExposure(cfg) {
+r.Add(f)
+}
+}
+
+progress("Scanning open ports")
+portHost := "localhost"
+if connectAddr != "" {
+portHost = connectAddr
+}
+for _, f := range checks.CheckOpenPorts(portHost) {
+r.Add(f)
+}
+
+// 4. Live checks
+if connectAddr != "" {
+progress("Connecting to LND node")
+
+certPath := tlsCertPath
+if certPath == "" {
+certPath = paths.TLSCert
+}
+macPath := macaroonPath
+if macPath == "" {
+macPath = paths.AdminMacaroon()
+}
+
+client, err := lngrpc.Connect(connectAddr, certPath, macPath)
+if err != nil {
+warnings = append(warnings, fmt.Sprintf("Live scan error: %v — config-only results shown", err))
+} else {
+defer client.Close()
+
+liveChecks := []struct {
+name  string
+label string
+fn    func(lngrpc.LndClient) ([]scanner.Finding, error)
+}{
+{"version/CVE", "Checking LND version and CVEs", checks.CheckLndVersion},
+{"chain sync", "Verifying chain sync", checks.CheckChainSync},
+{"peer count", "Checking peer connectivity", checks.CheckPeerCount},
+{"force-close", "Scanning force-close risks", checks.CheckPendingForceClose},
+{"balance", "Auditing balance exposure", checks.CheckLargeLocalBalance},
+}
+
+for _, lc := range liveChecks {
+progress(lc.label)
+results, err := lc.fn(client)
+if err != nil {
+warnings = append(warnings, fmt.Sprintf("%s check failed: %v", lc.name, err))
+continue
+}
+for _, f := range results {
+r.Add(f)
+}
+}
+}
+}
+
+return r, warnings, nil
 }
 
 func runScan(cmd *cobra.Command, args []string) error {
-	// 1. Detect paths
-	paths, err := lndpath.Detect(lndDir, configPath)
-	if err != nil && connectAddr == "" {
-		return fmt.Errorf("detecting LND paths: %w", err)
+if isInteractive() {
+return runInteractiveScan()
+}
+return runNonInteractiveScan()
+}
+
+func runInteractiveScan() error {
+	model := newScanModel(func(p *tea.Program) scanResult {
+		progress := func(phase string) { sendPhase(p, phase) }
+
+		r, w, err := executeScan(progress)
+		return scanResult{report: r, warnings: w, err: err}
+	})
+
+	p := tea.NewProgram(model, tea.WithOutput(os.Stderr))
+	model.programRef = p
+
+	finalModel, err := p.Run()
+	if err != nil {
+		return fmt.Errorf("UI error: %w", err)
 	}
 
-	// 2. Parse config (optional when --connect is set)
-	var cfg *config.LndConfig
-	if paths.ConfigFile != "" {
-		cfg, err = config.Parse(paths.ConfigFile)
-		if err != nil {
-			return fmt.Errorf("parsing config: %w", err)
-		}
-		if cfg.Bitcoin.Network != "" {
-			paths.Network = cfg.Bitcoin.Network
-		}
-	} else if connectAddr == "" {
-		fmt.Fprintln(os.Stderr, "⚠  No lnd.conf found. Use --config to specify the path.")
-		fmt.Fprintln(os.Stderr, "   Searched:", paths.LndDir)
-		return fmt.Errorf("no configuration file found")
+	m := finalModel.(scanModel)
+	if m.result == nil {
+		return fmt.Errorf("scan interrupted")
+	}
+	if m.result.err != nil {
+		return m.result.err
 	}
 
-	// 3. Run all checks
-	r := &scanner.Report{}
-
-	// Config-based checks (only when config is available)
-	if cfg != nil {
-		// File permission checks
-		filePaths := checks.FilePaths{
-			WalletDB:         paths.WalletDB(),
-			TLSKey:           paths.TLSKey,
-			AdminMacaroon:    paths.AdminMacaroon(),
-			ReadonlyMacaroon: paths.ReadonlyMacaroon(),
-			InvoiceMacaroon:  paths.InvoiceMacaroon(),
-			ChannelBackup:    paths.ChannelBackup(),
-			ConfigFile:       paths.ConfigFile,
-		}
-		for _, f := range checks.CheckFilePermissions(filePaths) {
-			r.Add(f)
-		}
-
-		// Transport checks
-		for _, f := range checks.CheckTLSCert(paths.TLSCert) {
-			r.Add(f)
-		}
-		for _, f := range checks.CheckRPCBindAddress(cfg) {
-			r.Add(f)
-		}
-		for _, f := range checks.CheckExternalIPLeak(cfg) {
-			r.Add(f)
-		}
-
-		// Access control checks
-		for _, f := range checks.CheckNoMacaroons(cfg) {
-			r.Add(f)
-		}
-		for _, f := range checks.CheckAdminMacaroonLeaks(paths.DataDir) {
-			r.Add(f)
-		}
-
-		// Dangerous flags
-		for _, f := range checks.CheckDangerousFlags(cfg) {
-			r.Add(f)
-		}
-
-		// Network privacy checks
-		for _, f := range checks.CheckTorConfig(cfg) {
-			r.Add(f)
-		}
-		for _, f := range checks.CheckPrivacySettings(cfg) {
-			r.Add(f)
-		}
-
-		// Channel safety checks
-		for _, f := range checks.CheckChannelSafety(cfg) {
-			r.Add(f)
-		}
-
-		// Network exposure checks
-		for _, f := range checks.CheckNetworkExposure(cfg) {
-			r.Add(f)
-		}
+	// Print any warnings collected during the scan
+	for _, w := range m.result.warnings {
+		fmt.Fprintf(os.Stderr, "  ⚠  %s\n", w)
 	}
 
-	// Port scanning (runs against the connect host, or localhost)
-	portHost := "localhost"
-	if connectAddr != "" {
-		portHost = connectAddr
-	}
-	for _, f := range checks.CheckOpenPorts(portHost) {
-		r.Add(f)
-	}
+	return renderReport(m.result.report)
+}
 
-	// Live gRPC checks (only when --connect is provided)
-	if connectAddr != "" {
-		liveFindings, liveErr := runLiveChecks(paths)
-		if liveErr != nil {
-			fmt.Fprintf(os.Stderr, "⚠  Live scan error: %v\n", liveErr)
-			fmt.Fprintln(os.Stderr, "   Config-only results are still shown below.")
-		}
-		for _, f := range liveFindings {
-			r.Add(f)
-		}
-	}
+func runNonInteractiveScan() error {
+progress := func(phase string) {
+if !quiet {
+fmt.Fprintf(os.Stderr, "  → %s...\n", phase)
+}
+}
 
-	// 4. Compute score on the FULL unfiltered report (always reflects true posture)
-	fullScore := r.Score()
-	fullRating := r.Rating()
-	fullSummary := r.Summary()
-	hasFailure := false
-	if threshold, err := scanner.ParseSeverity(failOn); err == nil {
-		hasFailure = r.HasFindingsAtOrAbove(threshold)
-	}
+r, warnings, err := executeScan(progress)
+if err != nil {
+return err
+}
 
-	// 5. Filter for display only (does NOT affect score)
-	var display *scanner.Report
-	if !verbose {
-		display = filterReport(r, scanner.Low)
-	} else {
-		display = filterReport(r, scanner.Info)
-	}
+for _, w := range warnings {
+fmt.Fprintf(os.Stderr, "  ⚠  %s\n", w)
+}
 
-	if sev, err := scanner.ParseSeverity(minSeverity); err == nil && sev > scanner.Info {
-		display = filterReport(display, sev)
-	}
+return renderReport(r)
+}
 
-	// 6. Output (use filtered findings but full score)
-	if quiet {
-		fmt.Printf("%d\n", fullScore)
-	} else {
-		switch outputFormat {
-		case "json":
-			if err := report.JSONWriterWithScore(os.Stdout, display, fullScore, fullRating, fullSummary); err != nil {
-				return fmt.Errorf("writing JSON: %w", err)
-			}
-		default:
-			report.TableWriterWithScore(os.Stdout, display, fullScore, fullRating, fullSummary, !noColor)
-		}
-	}
+func renderReport(r *scanner.Report) error {
+fullScore := r.Score()
+fullRating := r.Rating()
+fullSummary := r.Summary()
+hasFailure := false
+if threshold, err := scanner.ParseSeverity(failOn); err == nil {
+hasFailure = r.HasFindingsAtOrAbove(threshold)
+}
 
-	// 7. Exit code for CI/CD (based on FULL report, not filtered)
-	if hasFailure {
-		os.Exit(1)
-	}
+// Filter for display
+var display *scanner.Report
+if !verbose {
+display = filterReport(r, scanner.Low)
+} else {
+display = filterReport(r, scanner.Info)
+}
 
-	return nil
+if sev, err := scanner.ParseSeverity(minSeverity); err == nil && sev > scanner.Info {
+display = filterReport(display, sev)
+}
+
+// Output
+if quiet {
+fmt.Printf("%d\n", fullScore)
+} else {
+switch outputFormat {
+case "json":
+if err := report.JSONWriterWithScore(os.Stdout, display, fullScore, fullRating, fullSummary); err != nil {
+return fmt.Errorf("writing JSON: %w", err)
+}
+default:
+report.TableWriterWithScore(os.Stdout, display, fullScore, fullRating, fullSummary, !noColor)
+}
+}
+
+if hasFailure {
+os.Exit(1)
+}
+
+return nil
 }
 
 func filterReport(r *scanner.Report, minSev scanner.Severity) *scanner.Report {
-	filtered := &scanner.Report{}
-	for _, f := range r.Findings {
-		if f.Severity >= minSev {
-			filtered.Add(f)
-		}
-	}
-	return filtered
+filtered := &scanner.Report{}
+for _, f := range r.Findings {
+if f.Severity >= minSev {
+filtered.Add(f)
 }
-
-func runLiveChecks(paths lndpath.Paths) ([]scanner.Finding, error) {
-	// Resolve TLS cert path
-	certPath := tlsCertPath
-	if certPath == "" {
-		certPath = paths.TLSCert
-	}
-
-	// Resolve macaroon path
-	macPath := macaroonPath
-	if macPath == "" {
-		macPath = paths.AdminMacaroon()
-	}
-
-	client, err := lngrpc.Connect(connectAddr, certPath, macPath)
-	if err != nil {
-		return nil, fmt.Errorf("connecting to %s: %w", connectAddr, err)
-	}
-	defer client.Close()
-
-	if !quiet {
-		fmt.Fprintf(os.Stderr, "🔗 Connected to LND at %s\n", connectAddr)
-	}
-
-	var findings []scanner.Finding
-
-	liveChecks := []struct {
-		name string
-		fn   func(lngrpc.LndClient) ([]scanner.Finding, error)
-	}{
-		{"version/CVE", checks.CheckLndVersion},
-		{"chain sync", checks.CheckChainSync},
-		{"peer count", checks.CheckPeerCount},
-		{"force-close", checks.CheckPendingForceClose},
-		{"balance", checks.CheckLargeLocalBalance},
-	}
-
-	for _, lc := range liveChecks {
-		results, err := lc.fn(client)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "⚠  %s check failed: %v\n", lc.name, err)
-			continue
-		}
-		findings = append(findings, results...)
-	}
-
-	return findings, nil
+}
+return filtered
 }
