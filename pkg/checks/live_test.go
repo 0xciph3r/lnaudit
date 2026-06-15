@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	lngrpc "github.com/NonsoAmadi10/lnaudit/pkg/grpc"
-	"github.com/NonsoAmadi10/lnaudit/pkg/scanner"
+	lngrpc "github.com/0xciph3r/lnaudit/pkg/grpc"
+	"github.com/0xciph3r/lnaudit/pkg/scanner"
 )
 
 // --- Version / CVE tests ---

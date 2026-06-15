@@ -14,7 +14,7 @@
   <noscript>
     <style>body{font-family:Inter,sans-serif;max-width:720px;margin:40px auto;padding:0 20px;color:#191414}h1{margin-bottom:12px}</style>
     <h1>Lnaudit Docs</h1>
-    <p>JavaScript is required to render the documentation. Visit the <a href="https://github.com/NonsoAmadi10/lnaudit">GitHub repository</a> for the README.</p>
+    <p>JavaScript is required to render the documentation. Visit the <a href="https://github.com/0xciph3r/lnaudit">GitHub repository</a> for the README.</p>
   </noscript>
 
   <script type="module">
@@ -191,8 +191,8 @@
             </${VStack}>
             <${Divider} borderColor=${C.grey} my="16px" />
             <${VStack} align="stretch" spacing="1px">
-              <${SideLink} href="https://github.com/NonsoAmadi10/lnaudit/releases">Releases</${SideLink}>
-              <${SideLink} href="https://github.com/NonsoAmadi10/lnaudit">GitHub</${SideLink}>
+              <${SideLink} href="https://github.com/0xciph3r/lnaudit/releases">Releases</${SideLink}>
+              <${SideLink} href="https://github.com/0xciph3r/lnaudit">GitHub</${SideLink}>
             </${VStack}>
           </${Box}>
         </${GridItem}>
@@ -211,7 +211,7 @@
             <${Logo} />
             <${Button}
               as="a"
-              href="https://github.com/NonsoAmadi10/lnaudit"
+              href="https://github.com/0xciph3r/lnaudit"
               size="sm"
               bg=${C.amber}
               color="black"
@@ -306,10 +306,10 @@
                 </${Grid}>
 
                 <${HStack} spacing="8px" mt="14px" flexWrap="wrap">
-                  <a href="https://github.com/NonsoAmadi10/lnaudit/actions/workflows/ci.yml"><img src="https://github.com/NonsoAmadi10/lnaudit/actions/workflows/ci.yml/badge.svg" alt="CI" height="20" /></a>
-                  <a href="https://goreportcard.com/report/github.com/NonsoAmadi10/lnaudit"><img src="https://goreportcard.com/badge/github.com/NonsoAmadi10/lnaudit" alt="Go Report Card" height="20" /></a>
+                  <a href="https://github.com/0xciph3r/lnaudit/actions/workflows/ci.yml"><img src="https://github.com/0xciph3r/lnaudit/actions/workflows/ci.yml/badge.svg" alt="CI" height="20" /></a>
+                  <a href="https://goreportcard.com/report/github.com/0xciph3r/lnaudit"><img src="https://goreportcard.com/badge/github.com/0xciph3r/lnaudit" alt="Go Report Card" height="20" /></a>
                   <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="MIT License" height="20" />
-                  <a href="https://github.com/NonsoAmadi10/lnaudit/releases"><img src="https://img.shields.io/github/v/release/NonsoAmadi10/lnaudit" alt="Release" height="20" /></a>
+                  <a href="https://github.com/0xciph3r/lnaudit/releases"><img src="https://img.shields.io/github/v/release/0xciph3r/lnaudit" alt="Release" height="20" /></a>
                 </${HStack}>
 
                 <${Box} mt="14px" bg=${C.blueSoft} borderLeft="3px solid" borderColor=${C.blue} borderRadius="4px" p="10px 14px">
@@ -336,19 +336,19 @@
                   Build from source or use release binaries. Direct <${Code} bg=${C.pinkSoft} color=${C.pinkDeep}>go install @latest</${Code}>
                   is not recommended because LND currently requires a protobuf replace directive that Go refuses for remote installs.
                 </${Text}>
-                <${CodeBlock}>${`git clone https://github.com/NonsoAmadi10/lnaudit.git
+                <${CodeBlock}>${`git clone https://github.com/0xciph3r/lnaudit.git
 cd lnaudit
 make build
 sudo mv bin/lnaudit /usr/local/bin/lnaudit`}</${CodeBlock}>
 
                 <${Heading} as="h3" size="sm" mt="16px" mb="6px" color=${C.ink}>Download Release Binary</${Heading}>
                 <${CodeBlock}>${`# Linux (amd64)
-curl -LO https://github.com/NonsoAmadi10/lnaudit/releases/latest/download/lnaudit-linux-amd64
+curl -LO https://github.com/0xciph3r/lnaudit/releases/latest/download/lnaudit-linux-amd64
 chmod +x lnaudit-linux-amd64
 sudo mv lnaudit-linux-amd64 /usr/local/bin/lnaudit
 
 # macOS (Apple Silicon)
-curl -LO https://github.com/NonsoAmadi10/lnaudit/releases/latest/download/lnaudit-darwin-arm64
+curl -LO https://github.com/0xciph3r/lnaudit/releases/latest/download/lnaudit-darwin-arm64
 chmod +x lnaudit-darwin-arm64
 sudo mv lnaudit-darwin-arm64 /usr/local/bin/lnaudit`}</${CodeBlock}>
 
@@ -867,7 +867,7 @@ make release`}</${CodeBlock}>
                   <${ListItem}>Run <${Code} bg=${C.pinkSoft} color=${C.pinkDeep}>make check</${Code}> before opening a PR</${ListItem}>
                 </${OrderedList}>
                 <${Text} color=${C.greyMid} mt="8px">
-                  Full contributor guidelines: <${Link} href="https://github.com/NonsoAmadi10/lnaudit/blob/main/CONTRIBUTING.md" color=${C.pink} fontWeight="600">CONTRIBUTING.md</${Link}>
+                  Full contributor guidelines: <${Link} href="https://github.com/0xciph3r/lnaudit/blob/main/CONTRIBUTING.md" color=${C.pink} fontWeight="600">CONTRIBUTING.md</${Link}>
                 </${Text}>
               </${Section}>
 
@@ -906,12 +906,12 @@ make release`}</${CodeBlock}>
                 <${Divider} borderColor=${C.line} mb="12px" />
                 <${Text} fontSize="0.84rem" color=${C.greyMid}>
                   Lnaudit is open source software under the
-                  <${Link} href="https://github.com/NonsoAmadi10/lnaudit/blob/main/LICENSE" color=${C.pink} fontWeight="600"> MIT License</${Link}>.
+                  <${Link} href="https://github.com/0xciph3r/lnaudit/blob/main/LICENSE" color=${C.pink} fontWeight="600"> MIT License</${Link}>.
                 </${Text}>
                 <${HStack} justify="center" spacing="14px" mt="6px">
-                  <${Link} href="https://github.com/NonsoAmadi10/lnaudit/blob/main/CONTRIBUTING.md" fontSize="0.84rem" color=${C.greyMid} fontWeight="500">Contributing</${Link}>
-                  <${Link} href="https://github.com/NonsoAmadi10/lnaudit/blob/main/SECURITY.md" fontSize="0.84rem" color=${C.greyMid} fontWeight="500">Security Policy</${Link}>
-                  <${Link} href="https://github.com/NonsoAmadi10/lnaudit/blob/main/docs/POST-MORTEM.md" fontSize="0.84rem" color=${C.greyMid} fontWeight="500">Research</${Link}>
+                  <${Link} href="https://github.com/0xciph3r/lnaudit/blob/main/CONTRIBUTING.md" fontSize="0.84rem" color=${C.greyMid} fontWeight="500">Contributing</${Link}>
+                  <${Link} href="https://github.com/0xciph3r/lnaudit/blob/main/SECURITY.md" fontSize="0.84rem" color=${C.greyMid} fontWeight="500">Security Policy</${Link}>
+                  <${Link} href="https://github.com/0xciph3r/lnaudit/blob/main/docs/POST-MORTEM.md" fontSize="0.84rem" color=${C.greyMid} fontWeight="500">Research</${Link}>
                 </${HStack}>
               </${Box}>
             </${Stack}>

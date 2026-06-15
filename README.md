@@ -1,9 +1,9 @@
 # lnaudit
 
-[![CI](https://github.com/NonsoAmadi10/lnaudit/actions/workflows/ci.yml/badge.svg)](https://github.com/NonsoAmadi10/lnaudit/actions/workflows/ci.yml)
-[![Go Report Card](https://goreportcard.com/badge/github.com/NonsoAmadi10/lnaudit)](https://goreportcard.com/report/github.com/NonsoAmadi10/lnaudit)
+[![CI](https://github.com/0xciph3r/lnaudit/actions/workflows/ci.yml/badge.svg)](https://github.com/0xciph3r/lnaudit/actions/workflows/ci.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/0xciph3r/lnaudit)](https://goreportcard.com/report/github.com/0xciph3r/lnaudit)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Release](https://img.shields.io/github/v/release/NonsoAmadi10/lnaudit)](https://github.com/NonsoAmadi10/lnaudit/releases)
+[![Release](https://img.shields.io/github/v/release/0xciph3r/lnaudit)](https://github.com/0xciph3r/lnaudit/releases)
 
 **A security auditing framework for Lightning Network infrastructure**
 
@@ -11,7 +11,7 @@ lnaudit is an open-source security scanner for Lightning Network Daemon (LND) no
 
 Built for production Lightning infrastructure: routing nodes, exchanges, payment processors, and custodians.
 
-**[Documentation](https://nonsoamadi10.github.io/lnaudit/)** · [Report Bug](https://github.com/NonsoAmadi10/lnaudit/issues/new?template=bug_report.md) · [Request Feature](https://github.com/NonsoAmadi10/lnaudit/issues/new?template=feature_request.md)
+**[Documentation](https://0xciph3r.github.io/lnaudit/)** · [Report Bug](https://github.com/0xciph3r/lnaudit/issues/new?template=bug_report.md) · [Request Feature](https://github.com/0xciph3r/lnaudit/issues/new?template=feature_request.md)
 
 ---
 
@@ -77,7 +77,7 @@ Most catastrophic losses in Bitcoin infrastructure have resulted not from crypto
 Due to Go module replace directives required by LND dependencies, installation from source is the recommended method:
 
 ```bash
-git clone https://github.com/NonsoAmadi10/lnaudit.git
+git clone https://github.com/0xciph3r/lnaudit.git
 cd lnaudit
 make build
 sudo mv bin/lnaudit /usr/local/bin/
@@ -90,17 +90,17 @@ Download the latest release for your platform:
 
 ```bash
 # Linux (amd64)
-curl -LO https://github.com/NonsoAmadi10/lnaudit/releases/latest/download/lnaudit-linux-amd64
+curl -LO https://github.com/0xciph3r/lnaudit/releases/latest/download/lnaudit-linux-amd64
 chmod +x lnaudit-linux-amd64
 sudo mv lnaudit-linux-amd64 /usr/local/bin/lnaudit
 
 # macOS (Apple Silicon)
-curl -LO https://github.com/NonsoAmadi10/lnaudit/releases/latest/download/lnaudit-darwin-arm64
+curl -LO https://github.com/0xciph3r/lnaudit/releases/latest/download/lnaudit-darwin-arm64
 chmod +x lnaudit-darwin-arm64
 sudo mv lnaudit-darwin-arm64 /usr/local/bin/lnaudit
 
 # macOS (Intel)
-curl -LO https://github.com/NonsoAmadi10/lnaudit/releases/latest/download/lnaudit-darwin-amd64
+curl -LO https://github.com/0xciph3r/lnaudit/releases/latest/download/lnaudit-darwin-amd64
 chmod +x lnaudit-darwin-amd64
 sudo mv lnaudit-darwin-amd64 /usr/local/bin/lnaudit
 ```
@@ -431,7 +431,7 @@ jobs:
       
       - name: Install lnaudit
         run: |
-          curl -LO https://github.com/NonsoAmadi10/lnaudit/releases/latest/download/lnaudit-linux-amd64
+          curl -LO https://github.com/0xciph3r/lnaudit/releases/latest/download/lnaudit-linux-amd64
           chmod +x lnaudit-linux-amd64
           sudo mv lnaudit-linux-amd64 /usr/local/bin/lnaudit
       
@@ -445,7 +445,7 @@ jobs:
 lnaudit:
   stage: security
   script:
-    - curl -LO https://github.com/NonsoAmadi10/lnaudit/releases/latest/download/lnaudit-linux-amd64
+    - curl -LO https://github.com/0xciph3r/lnaudit/releases/latest/download/lnaudit-linux-amd64
     - chmod +x lnaudit-linux-amd64
     - ./lnaudit-linux-amd64 scan --config lnd.conf --fail-on high
   only:
@@ -519,7 +519,7 @@ lnaudit is open-source software released under the MIT License. Contributions ar
 
 ### How to Contribute
 
-1. **Report Issues**: [Open an issue](https://github.com/NonsoAmadi10/lnaudit/issues/new) for bugs or feature requests
+1. **Report Issues**: [Open an issue](https://github.com/0xciph3r/lnaudit/issues/new) for bugs or feature requests
 2. **Submit Pull Requests**: See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines
 3. **Improve Documentation**: Help refine docs, add examples, or clarify usage
 4. **Add Security Checks**: Propose new checks based on real-world incidents or CVEs
@@ -528,7 +528,7 @@ lnaudit is open-source software released under the MIT License. Contributions ar
 
 ```bash
 # Clone repository
-git clone https://github.com/NonsoAmadi10/lnaudit.git
+git clone https://github.com/0xciph3r/lnaudit.git
 cd lnaudit
 
 # Install dependencies
@@ -617,11 +617,11 @@ Built with:
 
 ## Links
 
-- **Website**: [nonsoamadi10.github.io/lnaudit](https://nonsoamadi10.github.io/lnaudit/)
-- **GitHub**: [github.com/NonsoAmadi10/lnaudit](https://github.com/NonsoAmadi10/lnaudit)
-- **Issue Tracker**: [github.com/NonsoAmadi10/lnaudit/issues](https://github.com/NonsoAmadi10/lnaudit/issues)
-- **Releases**: [github.com/NonsoAmadi10/lnaudit/releases](https://github.com/NonsoAmadi10/lnaudit/releases)
+- **Website**: [0xciph3r.github.io/lnaudit](https://0xciph3r.github.io/lnaudit/)
+- **GitHub**: [github.com/0xciph3r/lnaudit](https://github.com/0xciph3r/lnaudit)
+- **Issue Tracker**: [github.com/0xciph3r/lnaudit/issues](https://github.com/0xciph3r/lnaudit/issues)
+- **Releases**: [github.com/0xciph3r/lnaudit/releases](https://github.com/0xciph3r/lnaudit/releases)
 
 ---
 
-For questions, feedback, or support, please [open an issue](https://github.com/NonsoAmadi10/lnaudit/issues/new) or start a [discussion](https://github.com/NonsoAmadi10/lnaudit/discussions).
+For questions, feedback, or support, please [open an issue](https://github.com/0xciph3r/lnaudit/issues/new) or start a [discussion](https://github.com/0xciph3r/lnaudit/discussions).

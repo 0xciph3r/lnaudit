@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/NonsoAmadi10/lnaudit/pkg/config"
-	"github.com/NonsoAmadi10/lnaudit/pkg/scanner"
+	"github.com/0xciph3r/lnaudit/pkg/config"
+	"github.com/0xciph3r/lnaudit/pkg/scanner"
 )
 
 // macaroonScanDepth is the maximum directory depth walked during the macaroon

@@ -3,9 +3,9 @@ package checks
 import (
 	"testing"
 
-	"github.com/NonsoAmadi10/lnaudit/pkg/config"
-	lngrpc "github.com/NonsoAmadi10/lnaudit/pkg/grpc"
-	"github.com/NonsoAmadi10/lnaudit/pkg/scanner"
+	"github.com/0xciph3r/lnaudit/pkg/config"
+	lngrpc "github.com/0xciph3r/lnaudit/pkg/grpc"
+	"github.com/0xciph3r/lnaudit/pkg/scanner"
 )
 
 func TestCheckChannelPolicy(t *testing.T) {

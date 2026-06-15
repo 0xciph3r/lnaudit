@@ -170,4 +170,4 @@ This project follows the [Contributor Covenant Code of Conduct](CODE_OF_CONDUCT.
 
 ## Questions?
 
-Open a [discussion](https://github.com/NonsoAmadi10/lnaudit/discussions) or reach out in the issue tracker. We're happy to help you get started.
+Open a [discussion](https://github.com/0xciph3r/lnaudit/discussions) or reach out in the issue tracker. We're happy to help you get started.

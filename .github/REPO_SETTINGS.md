@@ -6,7 +6,7 @@
 A security auditing framework for Lightning Network infrastructure. Comprehensive configuration scanning and runtime checks for LND nodes.
 
 **Website:**
-https://nonsoamadi10.github.io/lnaudit/
+https://0xciph3r.github.io/lnaudit/
 
 **Topics (tags):**
 - lightning-network

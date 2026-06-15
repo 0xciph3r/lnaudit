@@ -6,7 +6,7 @@ If you discover a security vulnerability in lnaudit, **please report it responsi
 
 ### How to Report
 
-Email: **nonsoamadi@aol.com**
+Email: **dev@radi-labs.org**
 
 Include as much detail as possible:
 

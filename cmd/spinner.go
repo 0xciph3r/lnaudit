@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/NonsoAmadi10/lnaudit/pkg/scanner"
+	"github.com/0xciph3r/lnaudit/pkg/scanner"
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"

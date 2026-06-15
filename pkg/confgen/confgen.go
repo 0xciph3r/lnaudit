@@ -129,7 +129,7 @@ func headerSection(opts Options) section {
 		comment("  5.  Channel Policy         11. Watchtower"),
 		comment("  6.  Protocol               12. Autopilot / Debug"),
 		comment(""),
-		comment("See: https://github.com/NonsoAmadi10/lnaudit"),
+		comment("See: https://github.com/0xciph3r/lnaudit"),
 		comment("============================================================"),
 	}}
 }

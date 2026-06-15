@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/NonsoAmadi10/lnaudit/pkg/scanner"
+	"github.com/0xciph3r/lnaudit/pkg/scanner"
 )
 
 func sampleReport() *scanner.Report {

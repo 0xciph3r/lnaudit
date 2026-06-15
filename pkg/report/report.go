@@ -7,7 +7,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/NonsoAmadi10/lnaudit/pkg/scanner"
+	"github.com/0xciph3r/lnaudit/pkg/scanner"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/muesli/termenv"
 )

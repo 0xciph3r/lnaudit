@@ -1,4 +1,4 @@
-module github.com/NonsoAmadi10/lnaudit
+module github.com/0xciph3r/lnaudit
 
 go 1.25.0
 

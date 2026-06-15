@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/NonsoAmadi10/lnaudit/pkg/confgen"
+	"github.com/0xciph3r/lnaudit/pkg/confgen"
 	"github.com/spf13/cobra"
 )
 

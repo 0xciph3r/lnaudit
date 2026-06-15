@@ -5,7 +5,7 @@ import (
 	"io/fs"
 	"os"
 
-	"github.com/NonsoAmadi10/lnaudit/pkg/scanner"
+	"github.com/0xciph3r/lnaudit/pkg/scanner"
 )
 
 // sensitiveFile defines a file to check and its expected permissions.

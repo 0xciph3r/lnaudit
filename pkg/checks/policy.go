@@ -3,8 +3,8 @@ package checks
 import (
 	"fmt"
 
-	"github.com/NonsoAmadi10/lnaudit/pkg/config"
-	"github.com/NonsoAmadi10/lnaudit/pkg/scanner"
+	"github.com/0xciph3r/lnaudit/pkg/config"
+	"github.com/0xciph3r/lnaudit/pkg/scanner"
 )
 
 // CheckChannelPolicy audits channel policy settings for security misconfigurations.

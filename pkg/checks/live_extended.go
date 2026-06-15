@@ -3,8 +3,8 @@ package checks
 import (
 	"fmt"
 
-	lngrpc "github.com/NonsoAmadi10/lnaudit/pkg/grpc"
-	"github.com/NonsoAmadi10/lnaudit/pkg/scanner"
+	lngrpc "github.com/0xciph3r/lnaudit/pkg/grpc"
+	"github.com/0xciph3r/lnaudit/pkg/scanner"
 )
 
 // CheckChannelJamming detects channels with a high number of pending HTLCs,

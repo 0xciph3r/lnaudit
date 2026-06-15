@@ -3,7 +3,7 @@ package checks
 import (
 	"fmt"
 
-	"github.com/NonsoAmadi10/lnaudit/pkg/scanner"
+	"github.com/0xciph3r/lnaudit/pkg/scanner"
 )
 
 // knownCVE describes a vulnerability affecting specific LND versions.

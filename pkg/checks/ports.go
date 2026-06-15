@@ -5,7 +5,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/NonsoAmadi10/lnaudit/pkg/scanner"
+	"github.com/0xciph3r/lnaudit/pkg/scanner"
 )
 
 // portCheck defines a port to probe and how to classify it.
