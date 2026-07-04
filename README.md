@@ -27,6 +27,7 @@ Built for production Lightning infrastructure: routing nodes, exchanges, payment
 - [Scoring Methodology](#scoring-methodology)
 - [CI/CD Integration](#cicd-integration)
 - [Architecture](#architecture)
+- [Roadmap](#roadmap)
 - [Contributing](#contributing)
 - [Security](#security)
 - [License](#license)
@@ -510,6 +511,23 @@ lnaudit/
 │   └── PULL_REQUEST_TEMPLATE.md
 └── Makefile                   # Build automation
 ```
+
+---
+
+## Roadmap
+
+lnaudit's roadmap focuses on controls that directly improve Lightning node security and incident readiness:
+
+| Area | Planned capability | Why it matters |
+|------|--------------------|----------------|
+| **Secret hygiene** | Scan repositories and deployment directories for leaked macaroons, TLS keys, seed material, API credentials, and unsafe `.env` files | Secrets committed once can remain exploitable for years unless found and rotated |
+| **Macaroon least privilege** | Detect integrations using `admin.macaroon` where readonly, invoice, or custom-baked macaroons are sufficient | Limits blast radius if an integration server or operator workstation is compromised |
+| **Remediation automation** | Add `lnaudit suggest-config` to generate safe config patches from findings | Helps operators move from detection to repair without manually translating every finding |
+| **Watchtower health** | Verify configured watchtowers are reachable and usable, not just present in config | Offline or stale watchtower coverage can leave channels exposed during downtime |
+| **Backup verification** | Check channel backup freshness and warn when backups are not stored off-node | A local-only backup can disappear with the same host failure or compromise |
+| **Exposure limits** | Add configurable hot-wallet, channel-capacity, and node-balance thresholds | Operators need explicit limits on how much value any one node or channel can expose |
+| **Incident readiness** | Add checks for documented key rotation, fund sweep, channel close, and restore procedures | Response speed matters when keys, macaroons, or node access are suspected compromised |
+| **Security automation** | Add SARIF output for code scanning and CI/CD security workflows | Makes lnaudit easier to run continuously in production infrastructure pipelines |
 
 ---
 
