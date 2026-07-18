@@ -2,6 +2,7 @@ package checks
 
 import (
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -10,6 +11,7 @@ import (
 )
 
 const integrationScanMaxFileSize = 256 * 1024 // 256 KiB
+const integrationScanMaxFiles = 2000
 
 var integrationFileExtensions = map[string]bool{
 	".env":     true,
@@ -62,8 +64,14 @@ var adminOperationHints = []string{
 // over-privileged admin.macaroon usage where readonly, invoice, or custom
 // baked macaroons are likely sufficient.
 func CheckMacaroonLeastPrivilege(lndDir, lndDataDir string) []scanner.Finding {
-	home, err := os.UserHomeDir()
-	if err != nil {
+	return CheckMacaroonLeastPrivilegeInRoot("", lndDir, lndDataDir)
+}
+
+// CheckMacaroonLeastPrivilegeInRoot is the same as CheckMacaroonLeastPrivilege
+// but allows overriding scan root for performance and privacy control.
+func CheckMacaroonLeastPrivilegeInRoot(scanRoot, lndDir, lndDataDir string) []scanner.Finding {
+	root := resolveScanRoot(scanRoot)
+	if root == "" {
 		return nil
 	}
 
@@ -78,9 +86,10 @@ func CheckMacaroonLeastPrivilege(lndDir, lndDataDir string) []scanner.Finding {
 
 	var findings []scanner.Finding
 	seen := make(map[string]bool)
-	baseDepth := strings.Count(filepath.Clean(home), string(filepath.Separator))
+	baseDepth := strings.Count(filepath.Clean(root), string(filepath.Separator))
+	scannedFiles := 0
 
-	_ = filepath.WalkDir(home, func(path string, d os.DirEntry, walkErr error) error {
+	_ = filepath.WalkDir(root, func(path string, d os.DirEntry, walkErr error) error {
 		if walkErr != nil {
 			if d != nil && d.IsDir() {
 				return filepath.SkipDir
@@ -120,6 +129,10 @@ func CheckMacaroonLeastPrivilege(lndDir, lndDataDir string) []scanner.Finding {
 		if info.Size() <= 0 || info.Size() > integrationScanMaxFileSize {
 			return nil
 		}
+		scannedFiles++
+		if scannedFiles > integrationScanMaxFiles {
+			return fs.SkipAll
+		}
 
 		data, readErr := os.ReadFile(absPath)
 		if readErr != nil {
@@ -145,7 +158,7 @@ func CheckMacaroonLeastPrivilege(lndDir, lndDataDir string) []scanner.Finding {
 				Description: fmt.Sprintf(
 					"%s references admin.macaroon and appears to use read-only RPC operations. "+
 						"Using admin credentials for read-only workloads increases blast radius if the integration host is compromised.",
-					absPath,
+					redactHomePath(absPath),
 				),
 				Remediation: "Use readonly.macaroon for this integration or bake a custom macaroon limited to the required read-only permissions.",
 			})
@@ -158,7 +171,7 @@ func CheckMacaroonLeastPrivilege(lndDir, lndDataDir string) []scanner.Finding {
 				Description: fmt.Sprintf(
 					"%s references admin.macaroon and appears invoice-focused. "+
 						"Admin credentials are broader than needed for invoice-only integrations.",
-					absPath,
+					redactHomePath(absPath),
 				),
 				Remediation: "Use invoice.macaroon for this integration or bake a custom macaroon with only invoice permissions.",
 			})
@@ -171,7 +184,7 @@ func CheckMacaroonLeastPrivilege(lndDir, lndDataDir string) []scanner.Finding {
 				Description: fmt.Sprintf(
 					"%s references admin.macaroon outside the LND data directory. "+
 						"Even when exact RPC scope is unclear, integrations should avoid full admin credentials by default.",
-					absPath,
+					redactHomePath(absPath),
 				),
 				Remediation: "Replace admin.macaroon with readonly.macaroon, invoice.macaroon, or a custom-baked macaroon scoped to only required RPC methods.",
 			})

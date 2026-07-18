@@ -367,7 +367,10 @@ lnaudit scan
 lnaudit scan --config /path/to/lnd.conf
 
 # Specify LND data directory
-lnaudit scan --lnddir /path/to/.lnd`}</${CodeBlock}>
+lnaudit scan --lnddir /path/to/.lnd
+
+# Restrict filesystem secret scans to a specific root
+lnaudit scan --config ~/.lnd/lnd.conf --scan-root ~/infra/lightning`}</${CodeBlock}>
 
                 <${Heading} as="h3" size="sm" mt="16px" mb="6px" color=${C.ink}>Output and Filtering</${Heading}>
                 <${CodeBlock}>${`# Table output (default)
@@ -427,7 +430,14 @@ lnaudit suggest-config --config ~/.lnd/lnd.conf
 lnaudit suggest-config --config ~/.lnd/lnd.conf --connect localhost:10009
 
 # Save patch suggestions to a file (0600)
-lnaudit suggest-config --config ~/.lnd/lnd.conf --output suggested-lnd.conf`}</${CodeBlock}>
+lnaudit suggest-config --config ~/.lnd/lnd.conf --output suggested-lnd.conf
+
+# Restrict filesystem secret scans to a specific subtree
+lnaudit suggest-config --config ~/.lnd/lnd.conf --scan-root ~/infra/lightning`}</${CodeBlock}>
+                <${Text} color=${C.greyMid} mt="6px">
+                  When <${Code} bg=${C.pinkSoft} color=${C.pinkDeep}>--connect</${Code}> is used, suggestions depend on the trustworthiness of the target endpoint.
+                  Use only trusted LND endpoints.
+                </${Text}>
 
                 <${Heading} as="h3" size="sm" mt="16px" mb="8px" color=${C.ink}>Command Reference</${Heading}>
                 <${TableContainer}>

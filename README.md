@@ -130,6 +130,9 @@ lnaudit scan --config ~/.lnd/lnd.conf
 
 # Specify LND data directory
 lnaudit scan --lnddir /mnt/lnd
+
+# Restrict filesystem secret scans to a specific root
+lnaudit scan --config ~/.lnd/lnd.conf --scan-root ~/infra/lightning
 ```
 
 ### Live Node Scan
@@ -204,7 +207,12 @@ lnaudit suggest-config --config ~/.lnd/lnd.conf --connect localhost:10009
 
 # Write suggestions to file
 lnaudit suggest-config --config ~/.lnd/lnd.conf --output suggested.conf
+
+# Restrict filesystem secret scans to a specific subtree
+lnaudit suggest-config --config ~/.lnd/lnd.conf --scan-root ~/infra/lightning
 ```
+
+When `--connect` is used, suggestion quality depends on the trustworthiness of the target endpoint. Use only trusted LND endpoints.
 
 ---
 

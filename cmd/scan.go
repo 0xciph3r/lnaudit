@@ -24,6 +24,7 @@ var (
 	connectAddr  string
 	macaroonPath string
 	tlsCertPath  string
+	scanRoot     string
 	verbose      bool
 	noColor      bool
 	quiet        bool
@@ -35,6 +36,7 @@ type scanOptions struct {
 	connectAddr  string
 	macaroonPath string
 	tlsCertPath  string
+	scanRoot     string
 }
 
 var scanCmd = &cobra.Command{
@@ -61,6 +63,7 @@ func init() {
 	scanCmd.Flags().StringVar(&connectAddr, "connect", "", "gRPC address of running LND node (e.g., localhost:10009)")
 	scanCmd.Flags().StringVar(&macaroonPath, "macaroon", "", "path to admin.macaroon (auto-detected if --connect is set)")
 	scanCmd.Flags().StringVar(&tlsCertPath, "tlscert", "", "path to tls.cert for gRPC (auto-detected from lnddir)")
+	scanCmd.Flags().StringVar(&scanRoot, "scan-root", "", "root directory for filesystem leak checks (default: user home)")
 	scanCmd.Flags().BoolVar(&verbose, "verbose", false, "show INFO-level findings")
 	scanCmd.Flags().BoolVar(&noColor, "no-color", false, "disable colored output")
 	scanCmd.Flags().BoolVar(&quiet, "quiet", false, "only output the score")
@@ -141,7 +144,7 @@ func executeScanWithOptions(opts scanOptions, progress func(string)) (*scanner.R
 		for _, f := range checks.CheckAdminMacaroonLeaks(paths.DataDir) {
 			r.Add(f)
 		}
-		for _, f := range checks.CheckMacaroonLeastPrivilege(paths.LndDir, paths.DataDir) {
+		for _, f := range checks.CheckMacaroonLeastPrivilegeInRoot(opts.scanRoot, paths.LndDir, paths.DataDir) {
 			r.Add(f)
 		}
 		for _, f := range checks.CheckSecretHygieneLeaks(paths.LndDir, paths.DataDir) {
@@ -263,6 +266,7 @@ func executeScan(progress func(string)) (*scanner.Report, []string, error) {
 		connectAddr:  connectAddr,
 		macaroonPath: macaroonPath,
 		tlsCertPath:  tlsCertPath,
+		scanRoot:     scanRoot,
 	}, progress)
 }
 

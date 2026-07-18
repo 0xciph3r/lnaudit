@@ -14,6 +14,7 @@ var (
 	suggestConnectAddr  string
 	suggestMacaroonPath string
 	suggestTLSCertPath  string
+	suggestScanRoot     string
 	suggestOutput       string
 	suggestForce        bool
 )
@@ -35,6 +36,7 @@ func init() {
 	suggestConfigCmd.Flags().StringVar(&suggestConnectAddr, "connect", "", "gRPC address of running LND node (optional)")
 	suggestConfigCmd.Flags().StringVar(&suggestMacaroonPath, "macaroon", "", "path to macaroon for --connect mode")
 	suggestConfigCmd.Flags().StringVar(&suggestTLSCertPath, "tlscert", "", "path to tls.cert for --connect mode")
+	suggestConfigCmd.Flags().StringVar(&suggestScanRoot, "scan-root", "", "root directory for filesystem leak checks (default: user home)")
 	suggestConfigCmd.Flags().StringVarP(&suggestOutput, "output", "o", "", "write suggestion output to file instead of stdout")
 	suggestConfigCmd.Flags().BoolVar(&suggestForce, "force", false, "overwrite existing output file")
 
@@ -48,6 +50,7 @@ func runSuggestConfig(cmd *cobra.Command, args []string) error {
 		connectAddr:  suggestConnectAddr,
 		macaroonPath: suggestMacaroonPath,
 		tlsCertPath:  suggestTLSCertPath,
+		scanRoot:     suggestScanRoot,
 	}
 
 	progress := func(string) {}
@@ -57,6 +60,9 @@ func runSuggestConfig(cmd *cobra.Command, args []string) error {
 	}
 	for _, w := range warnings {
 		fmt.Fprintf(os.Stderr, "  ⚠  %s\n", w)
+	}
+	if suggestConnectAddr != "" {
+		fmt.Fprintln(os.Stderr, "  ⚠  --connect suggestions depend on live endpoint data; only use trusted LND endpoints.")
 	}
 
 	if suggestOutput == "" {

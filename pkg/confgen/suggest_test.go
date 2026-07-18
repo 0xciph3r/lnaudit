@@ -56,6 +56,7 @@ func TestWriteSuggestedConfigPatch_OutputsSections(t *testing.T) {
 		{ID: "P-7"},
 		{ID: "R-8"},
 		{ID: "C-1"},
+		{ID: "N-2"},
 	}
 
 	var buf bytes.Buffer
@@ -67,10 +68,13 @@ func TestWriteSuggestedConfigPatch_OutputsSections(t *testing.T) {
 	for _, token := range []string{
 		"[Application Options]",
 		"[Bitcoin]",
+		"[tor]",
 		"[wtclient]",
 		"bitcoin.timelockdelta=80",
 		"wallet-unlock-allow-create=false",
+		"tor.streamisolation=true",
 		"wtclient.active=true",
+		"source-findings: P-7",
 		"Manual actions",
 	} {
 		if !strings.Contains(out, token) {
