@@ -29,6 +29,14 @@ var (
 	quiet        bool
 )
 
+type scanOptions struct {
+	configPath   string
+	lndDir       string
+	connectAddr  string
+	macaroonPath string
+	tlsCertPath  string
+}
+
 var scanCmd = &cobra.Command{
 	Use:   "scan",
 	Short: "Scan an LND node for security issues",
@@ -68,14 +76,14 @@ func isInteractive() bool {
 	return term.IsTerminal(int(os.Stderr.Fd()))
 }
 
-// executeScan runs all scan checks with optional progress reporting.
-func executeScan(progress func(string)) (*scanner.Report, []string, error) {
+// executeScanWithOptions runs all scan checks with optional progress reporting.
+func executeScanWithOptions(opts scanOptions, progress func(string)) (*scanner.Report, []string, error) {
 	var warnings []string
 
 	// 1. Detect paths
 	progress("Detecting LND paths")
-	paths, err := lndpath.Detect(lndDir, configPath)
-	if err != nil && connectAddr == "" {
+	paths, err := lndpath.Detect(opts.lndDir, opts.configPath)
+	if err != nil && opts.connectAddr == "" {
 		return nil, nil, fmt.Errorf("detecting LND paths: %w", err)
 	}
 
@@ -90,7 +98,7 @@ func executeScan(progress func(string)) (*scanner.Report, []string, error) {
 		if cfg.Bitcoin.Network != "" {
 			paths.Network = cfg.Bitcoin.Network
 		}
-	} else if connectAddr == "" {
+	} else if opts.connectAddr == "" {
 		return nil, nil, fmt.Errorf("no lnd.conf found (searched %s). Use --config to specify the path", paths.LndDir)
 	}
 
@@ -131,6 +139,9 @@ func executeScan(progress func(string)) (*scanner.Report, []string, error) {
 			r.Add(f)
 		}
 		for _, f := range checks.CheckAdminMacaroonLeaks(paths.DataDir) {
+			r.Add(f)
+		}
+		for _, f := range checks.CheckMacaroonLeastPrivilege(paths.LndDir, paths.DataDir) {
 			r.Add(f)
 		}
 		for _, f := range checks.CheckSecretHygieneLeaks(paths.LndDir, paths.DataDir) {
@@ -186,27 +197,27 @@ func executeScan(progress func(string)) (*scanner.Report, []string, error) {
 
 	progress("Scanning open ports")
 	portHost := "localhost"
-	if connectAddr != "" {
-		portHost = connectAddr
+	if opts.connectAddr != "" {
+		portHost = opts.connectAddr
 	}
 	for _, f := range checks.CheckOpenPorts(portHost) {
 		r.Add(f)
 	}
 
 	// 4. Live checks
-	if connectAddr != "" {
+	if opts.connectAddr != "" {
 		progress("Connecting to LND node")
 
-		certPath := tlsCertPath
+		certPath := opts.tlsCertPath
 		if certPath == "" {
 			certPath = paths.TLSCert
 		}
-		macPath := macaroonPath
+		macPath := opts.macaroonPath
 		if macPath == "" {
 			macPath = paths.AdminMacaroon()
 		}
 
-		client, err := lngrpc.Connect(connectAddr, certPath, macPath)
+		client, err := lngrpc.Connect(opts.connectAddr, certPath, macPath)
 		if err != nil {
 			warnings = append(warnings, fmt.Sprintf("Live scan error: %v — config-only results shown", err))
 		} else {
@@ -242,6 +253,17 @@ func executeScan(progress func(string)) (*scanner.Report, []string, error) {
 	}
 
 	return r, warnings, nil
+}
+
+// executeScan runs all scan checks with optional progress reporting.
+func executeScan(progress func(string)) (*scanner.Report, []string, error) {
+	return executeScanWithOptions(scanOptions{
+		configPath:   configPath,
+		lndDir:       lndDir,
+		connectAddr:  connectAddr,
+		macaroonPath: macaroonPath,
+		tlsCertPath:  tlsCertPath,
+	}, progress)
 }
 
 func runScan(cmd *cobra.Command, args []string) error {

@@ -55,7 +55,9 @@ Most catastrophic losses in Bitcoin infrastructure have resulted not from crypto
 - **Static configuration analysis**: Parse and audit `lnd.conf` without a running node, including TLS, RPC/REST, macaroons, Tor, channel policy, autopilot, gossip, payment, and protocol hardening
 - **Live runtime checks**: Connect via gRPC to audit version, sync state, peer count, force-close state, balance exposure, pending HTLC pressure, zero-conf channels, and negotiated HTLC limits
 - **Actionable remediation**: Every finding includes a description, a specific recommendation, and a reference to the real-world incident that motivated the check
+- **Least-privilege macaroon audit**: Detects integrations using `admin.macaroon` where `readonly`, `invoice`, or custom-scoped macaroons are safer
 - **Hardened config generator**: Generate a security-hardened `lnd.conf` template with comments explaining every setting and its threat model context
+- **Findings-aware config suggestions**: Generate patch-style `lnd.conf` recommendations directly from current findings with `lnaudit suggest-config`
 - **Interactive scan experience**: Bubble Tea-powered spinner and progress tracking during scans with TTY detection for CI compatibility
 - **File permission auditing**: Detect world-readable wallets, credentials, and TLS private keys
 - **Symlink attack detection**: Identify symbolic links to sensitive files that bypass permission checks
@@ -108,7 +110,7 @@ sudo mv lnaudit-darwin-amd64 /usr/local/bin/lnaudit
 
 ### Prerequisites
 
-- **Go 1.23+** (for building from source)
+- **Go 1.25+** (for building from source)
 - **LND node** with access to configuration directory (running node optional for config-only scans)
 
 ---
@@ -189,6 +191,19 @@ lnaudit generate --profile routing
 
 # Write to file with Tor enabled
 lnaudit generate --tor --output lnd.conf
+```
+
+### Suggest Config Changes from Findings
+
+```bash
+# Derive config patch suggestions from current findings
+lnaudit suggest-config --config ~/.lnd/lnd.conf
+
+# Include live checks as signal input
+lnaudit suggest-config --config ~/.lnd/lnd.conf --connect localhost:10009
+
+# Write suggestions to file
+lnaudit suggest-config --config ~/.lnd/lnd.conf --output suggested.conf
 ```
 
 ---
@@ -301,6 +316,22 @@ Profiles control whether the template is optimized for a public routing node or 
 | `routing` | Public Lightning routing node | Keeps routing functionality enabled while hardening RPC, TLS, Tor, gossip, channel policy, watchtower, and fee-safety settings |
 | `private` | Wallet/private node that primarily sends and receives | Adds more restrictive defaults such as disabling inbound P2P and rejecting forwarded HTLCs |
 
+### Findings-Aware Suggest Config
+
+Use `lnaudit suggest-config` to derive patch-style key/value updates from real findings:
+
+```bash
+# Print patch suggestions to stdout
+lnaudit suggest-config --config ~/.lnd/lnd.conf
+
+# Save suggestions to a file (mode 0600)
+lnaudit suggest-config --config ~/.lnd/lnd.conf --output suggested-lnd.conf
+```
+
+`suggest-config` emits:
+1. Recommended `lnd.conf` key/value updates grouped by section
+2. Manual actions for findings that cannot be safely represented as direct config keys (for example credential rotation, least-privilege macaroon replacement, or secret relocation)
+
 ### Example Output
 
 ```ini
@@ -376,7 +407,7 @@ lnaudit performs 60+ security checks across static configuration, filesystem, ne
 |--------|--------|----------------------|
 | **Transport Security** | TLS certificate validation, encrypted TLS key checks, REST TLS checks, RPC/REST binding audit, HTTP header timeout review | Expired certificates, weak crypto, plaintext REST, API exposure, Slowloris-style REST attacks |
 | **Key Management** | File permission auditing on wallet.db, TLS keys, macaroons, channel backups | World-readable credentials, key leaks |
-| **Access Control** | Macaroon authentication status, stray macaroon detection, secret hygiene scan (stray `tls.key`, seed files, sensitive `.env`), wallet unlock safety, REST CORS, dangerous flags | Disabled auth (`--no-macaroons`), seed/private key leakage, browser-origin RPC attacks, debug logging with secrets |
+| **Access Control** | Macaroon authentication status, stray macaroon detection, macaroon least-privilege audit for integrations, secret hygiene scan (stray `tls.key`, seed files, sensitive `.env`), wallet unlock safety, REST CORS, dangerous flags | Disabled auth (`--no-macaroons`), over-privileged integration credentials, seed/private key leakage, browser-origin RPC attacks, debug logging with secrets |
 | **Network Privacy** | Tor configuration, stream isolation, SCID aliases, onion key encryption | IP address leaks, V2 onion deprecation, clearnet fallback |
 | **Channel Safety** | Watchtower configuration, confirmation depth, channel limits, force-close detection, pending HTLC pressure | Unmonitored channels, low confirmation targets, channel jamming, stuck HTLCs |
 | **Policy** | Circular routing, push-amount channels, HTLC limits, CLTV expiry, timelock delta, minimum HTLC size, fee estimation, autopilot | Balance probing, griefing, channel jamming, liquidity lockup, under-fee'd transactions, autonomous fund deployment |

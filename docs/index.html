@@ -414,6 +414,21 @@ lnaudit generate --profile routing --tor --output lnd.conf
 # Add a watchtower URI and node alias
 lnaudit generate --watchtower "03abc...@tower.example.com:9911" --alias "my-routing-node"`}</${CodeBlock}>
 
+                <${Heading} as="h3" size="sm" mt="16px" mb="6px" color=${C.ink}>Suggest Config Patches from Findings</${Heading}>
+                <${Text} color=${C.greyMid} mb="6px">
+                  <${Code} bg=${C.pinkSoft} color=${C.pinkDeep}>lnaudit suggest-config</${Code}> runs checks and outputs
+                  findings-aware <${Code} bg=${C.pinkSoft} color=${C.pinkDeep}>lnd.conf</${Code}> patch recommendations, including
+                  manual actions for items that cannot be safely auto-configured.
+                </${Text}>
+                <${CodeBlock}>${`# Suggest config updates from static findings
+lnaudit suggest-config --config ~/.lnd/lnd.conf
+
+# Include live checks as additional signal
+lnaudit suggest-config --config ~/.lnd/lnd.conf --connect localhost:10009
+
+# Save patch suggestions to a file (0600)
+lnaudit suggest-config --config ~/.lnd/lnd.conf --output suggested-lnd.conf`}</${CodeBlock}>
+
                 <${Heading} as="h3" size="sm" mt="16px" mb="8px" color=${C.ink}>Command Reference</${Heading}>
                 <${TableContainer}>
                   <${Table} size="sm" variant="simple">
@@ -577,6 +592,7 @@ lnaudit scan --connect mynode.local:10009 \\
                     <${Tbody}>
                       <${Tr}><${Td}>Macaroon Authentication Disabled</${Td}><${Td}>CRITICAL</${Td}><${Td}>Flags <${Code}>no-macaroons=true</${Code}> which removes all authentication</${Td}></${Tr}>
                       <${Tr}><${Td}>Stray Macaroon Files</${Td}><${Td}>CRITICAL / HIGH</${Td}><${Td}>Macaroon files found outside the LND data directory</${Td}></${Tr}>
+                      <${Tr}><${Td}>Macaroon Least-Privilege Audit</${Td}><${Td}>HIGH / MEDIUM</${Td}><${Td}>Flags integrations that use <${Code}>admin.macaroon</${Code}> where readonly, invoice, or custom-scoped macaroons are likely sufficient</${Td}></${Tr}>
                       <${Tr}><${Td}>Stray TLS Private Key (tls.key)</${Td}><${Td}>HIGH</${Td}><${Td}>Flags <${Code}>tls.key</${Code}> files found outside expected LND directories</${Td}></${Tr}>
                       <${Tr}><${Td}>Seed Material File Leakage</${Td}><${Td}>CRITICAL</${Td}><${Td}>Detects likely plaintext seed files (for example <${Code}>wallet.seed</${Code}> or <${Code}>*.seed</${Code}>) outside secure storage</${Td}></${Tr}>
                       <${Tr}><${Td}>Sensitive .env Credential Keys</${Td}><${Td}>HIGH</${Td}><${Td}>Detects sensitive auth/API/private key variables stored in <${Code}>.env*</${Code}> files</${Td}></${Tr}>
@@ -813,6 +829,7 @@ lnaudit scan --connect mynode.local:10009 \\
 ├── cmd/                    # CLI Commands and terminal UI
 │   ├── scan.go             # Scan orchestration
 │   ├── generate.go         # Hardened lnd.conf generator
+│   ├── suggest_config.go   # Findings-aware config patch suggestions
 │   └── spinner.go          # Bubble Tea scan progress UI
 ├── pkg/
 │   ├── scanner/            # Finding Model and Score Calculation
@@ -821,6 +838,8 @@ lnaudit scan --connect mynode.local:10009 \\
 │   │   ├── transport.go    # TLS, RPC Binding, External IP Exposure
 │   │   ├── exposure.go     # P2P Listener, NAT/UPnP, Network Exposure
 │   │   ├── access.go       # Macaroon Auth, Dangerous Flags
+│   │   ├── macaroon_least_privilege.go # Integration least-privilege audit
+│   │   ├── secret_hygiene.go # Secret leak checks (tls.key, seed, env)
 │   │   ├── privacy.go      # Tor Configuration, Channel Safety
 │   │   ├── policy.go       # Channel, Bitcoin, Payment Policy Checks
 │   │   ├── resilience.go   # Protocol, Autopilot, Gossip, TLS Hardening
