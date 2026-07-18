@@ -133,6 +133,9 @@ func executeScan(progress func(string)) (*scanner.Report, []string, error) {
 		for _, f := range checks.CheckAdminMacaroonLeaks(paths.DataDir) {
 			r.Add(f)
 		}
+		for _, f := range checks.CheckSecretHygieneLeaks(paths.LndDir, paths.DataDir) {
+			r.Add(f)
+		}
 		for _, f := range checks.CheckDangerousFlags(cfg) {
 			r.Add(f)
 		}

@@ -577,6 +577,10 @@ lnaudit scan --connect mynode.local:10009 \\
                     <${Tbody}>
                       <${Tr}><${Td}>Macaroon Authentication Disabled</${Td}><${Td}>CRITICAL</${Td}><${Td}>Flags <${Code}>no-macaroons=true</${Code}> which removes all authentication</${Td}></${Tr}>
                       <${Tr}><${Td}>Stray Macaroon Files</${Td}><${Td}>CRITICAL / HIGH</${Td}><${Td}>Macaroon files found outside the LND data directory</${Td}></${Tr}>
+                      <${Tr}><${Td}>Stray TLS Private Key (tls.key)</${Td}><${Td}>HIGH</${Td}><${Td}>Flags <${Code}>tls.key</${Code}> files found outside expected LND directories</${Td}></${Tr}>
+                      <${Tr}><${Td}>Seed Material File Leakage</${Td}><${Td}>CRITICAL</${Td}><${Td}>Detects likely plaintext seed files (for example <${Code}>wallet.seed</${Code}> or <${Code}>*.seed</${Code}>) outside secure storage</${Td}></${Tr}>
+                      <${Tr}><${Td}>Sensitive .env Credential Keys</${Td}><${Td}>HIGH</${Td}><${Td}>Detects sensitive auth/API/private key variables stored in <${Code}>.env*</${Code}> files</${Td}></${Tr}>
+                      <${Tr}><${Td}>Sensitive .env Permission Exposure</${Td}><${Td}>HIGH</${Td}><${Td}>Flags sensitive <${Code}>.env*</${Code}> files that are group/world readable</${Td}></${Tr}>
                       <${Tr}><${Td}>noseedbackup Enabled</${Td}><${Td}>CRITICAL</${Td}><${Td}>Wallet seed is never persisted to disk</${Td}></${Tr}>
                       <${Tr}><${Td}>noencryptwallet Enabled</${Td}><${Td}>CRITICAL</${Td}><${Td}>Wallet file stored without encryption</${Td}></${Tr}>
                       <${Tr}><${Td}>Wallet Auto-Creation</${Td}><${Td}>CRITICAL</${Td}><${Td}>Flags <${Code}>wallet-unlock-allow-create=true</${Code}> because an attacker can inject an adversarial seed at startup</${Td}></${Tr}>

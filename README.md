@@ -376,7 +376,7 @@ lnaudit performs 60+ security checks across static configuration, filesystem, ne
 |--------|--------|----------------------|
 | **Transport Security** | TLS certificate validation, encrypted TLS key checks, REST TLS checks, RPC/REST binding audit, HTTP header timeout review | Expired certificates, weak crypto, plaintext REST, API exposure, Slowloris-style REST attacks |
 | **Key Management** | File permission auditing on wallet.db, TLS keys, macaroons, channel backups | World-readable credentials, key leaks |
-| **Access Control** | Macaroon authentication status, stray macaroon detection, wallet unlock safety, REST CORS, dangerous flags | Disabled auth (`--no-macaroons`), seed injection, browser-origin RPC attacks, debug logging with secrets |
+| **Access Control** | Macaroon authentication status, stray macaroon detection, secret hygiene scan (stray `tls.key`, seed files, sensitive `.env`), wallet unlock safety, REST CORS, dangerous flags | Disabled auth (`--no-macaroons`), seed/private key leakage, browser-origin RPC attacks, debug logging with secrets |
 | **Network Privacy** | Tor configuration, stream isolation, SCID aliases, onion key encryption | IP address leaks, V2 onion deprecation, clearnet fallback |
 | **Channel Safety** | Watchtower configuration, confirmation depth, channel limits, force-close detection, pending HTLC pressure | Unmonitored channels, low confirmation targets, channel jamming, stuck HTLCs |
 | **Policy** | Circular routing, push-amount channels, HTLC limits, CLTV expiry, timelock delta, minimum HTLC size, fee estimation, autopilot | Balance probing, griefing, channel jamming, liquidity lockup, under-fee'd transactions, autonomous fund deployment |
