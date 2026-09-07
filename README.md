@@ -54,6 +54,10 @@ Most catastrophic losses in Bitcoin infrastructure have resulted not from crypto
 
 - **Static configuration analysis**: Parse and audit `lnd.conf` without a running node, including TLS, RPC/REST, macaroons, Tor, channel policy, autopilot, gossip, payment, and protocol hardening
 - **Live runtime checks**: Connect via gRPC to audit version, sync state, peer count, force-close state, balance exposure, pending HTLC pressure, zero-conf channels, and negotiated HTLC limits
+- **Watchtower health validation**: Validates watchtower configuration posture and optionally probes endpoint reachability from the scanning host
+- **Backup readiness checks**: Detects missing `channel.backup` when local node state indicates backups should exist
+- **Configurable exposure limits**: Operator-tunable thresholds for hot wallet balance, total node exposure, and per-channel capacity
+- **Incident readiness checks**: Validates runbook coverage for key rotation, emergency fund sweep, channel-close response, and restore procedures
 - **Actionable remediation**: Every finding includes a description, a specific recommendation, and a reference to the real-world incident that motivated the check
 - **Least-privilege macaroon audit**: Detects integrations using `admin.macaroon` where `readonly`, `invoice`, or custom-scoped macaroons are safer
 - **Hardened config generator**: Generate a security-hardened `lnd.conf` template with comments explaining every setting and its threat model context
@@ -68,7 +72,7 @@ Most catastrophic losses in Bitcoin infrastructure have resulted not from crypto
 - **Protocol risk detection**: Flag zero-conf, no-anchor, wumbo, circular routing, weak timelocks, and unsafe fee-estimation choices
 - **CVE mapping**: Cross-reference running LND version against known vulnerabilities
 - **Port scanning**: Probe common Bitcoin and LND ports for unexpected exposure
-- **Multiple output formats**: Human-readable reports for operators and JSON for automation
+- **Multiple output formats**: Human-readable reports for operators, JSON for automation, and SARIF for GitHub code scanning
 - **CI/CD gates**: Exit with non-zero status on high-severity findings
 
 ---
@@ -133,7 +137,25 @@ lnaudit scan --lnddir /mnt/lnd
 
 # Restrict filesystem secret scans to a specific root
 lnaudit scan --config ~/.lnd/lnd.conf --scan-root ~/infra/lightning
+
+# Tune exposure thresholds (satoshis)
+lnaudit scan --connect localhost:10009 \
+  --max-hot-wallet-sats 5000000 \
+  --max-node-exposure-sats 10000000 \
+  --max-channel-capacity-sats 8000000
+
+# Point incident-readiness checks at runbook directory
+lnaudit scan --config ~/.lnd/lnd.conf --runbook-dir ~/ops/runbooks
+
+# Optional: actively probe watchtower endpoints from this scanning host
+lnaudit scan --config ~/.lnd/lnd.conf --probe-watchtowers
 ```
+
+Incident-readiness checks only run when `--runbook-dir` is explicitly set.
+Backup readiness checks run only when the scanner can see the local LND data directory.
+Watchtower endpoint probing is opt-in (`--probe-watchtowers`) and reflects scanner-host reachability, not guaranteed LND-host reachability.
+Exposure-threshold findings are opt-in and run only when one or more `--max-*-sats` flags are set above zero.
+Backup readiness checks do not infer off-node storage posture from local filename heuristics.
 
 ### Live Node Scan
 
@@ -161,8 +183,8 @@ lnaudit scan --config ~/.lnd/lnd.conf --connect localhost:10009
 
 | Mode | Source | Checks |
 |------|--------|--------|
-| Static | `lnd.conf`, data directory, local filesystem | RPC/REST binding, TLS hardening, macaroon auth, wallet creation safety, Tor privacy, watchtower config, channel policy, Bitcoin policy, payment settings, protocol flags, autopilot, gossip banning, file permissions |
-| Live | gRPC read-only APIs | LND version vs CVEs, chain and graph sync, peer count, force-close state, balance exposure, active zero-conf channels, high pending HTLC counts, negotiated remote HTLC limits |
+| Static | `lnd.conf`, data directory, local filesystem | RPC/REST binding, TLS hardening, macaroon auth, wallet creation safety, Tor privacy, watchtower config posture, channel policy, Bitcoin policy, payment settings, protocol flags, autopilot, gossip banning, file permissions |
+| Live | gRPC read-only APIs | LND version vs CVEs, chain and graph sync, peer count, force-close state, balance exposure, configurable threshold alerts (hot wallet / node exposure / channel capacity), active zero-conf channels, high pending HTLC counts, negotiated remote HTLC limits |
 | Active network | Local port probing | Unexpected exposure on common LND and Bitcoin service ports |
 
 ### CI/CD Integration
@@ -172,6 +194,9 @@ Fail builds on high-severity findings:
 ```bash
 # Exit code 1 if HIGH or CRITICAL findings exist
 lnaudit scan --fail-on high --format json > audit.json
+
+# Emit SARIF for GitHub code scanning upload
+lnaudit scan --fail-on high --format sarif > lnaudit.sarif
 
 # Filter output by severity
 lnaudit scan --min-severity high
@@ -476,7 +501,13 @@ jobs:
           sudo mv lnaudit-linux-amd64 /usr/local/bin/lnaudit
       
       - name: Audit LND Configuration
-        run: lnaudit scan --config config/lnd.conf --fail-on high --format json
+        run: lnaudit scan --config config/lnd.conf --fail-on high --format sarif > lnaudit.sarif
+
+      - name: Upload SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: lnaudit.sarif
 ```
 
 ### GitLab CI
@@ -562,11 +593,11 @@ lnaudit's roadmap focuses on controls that directly improve Lightning node secur
 | **Secret hygiene** | Scan repositories and deployment directories for leaked macaroons, TLS keys, seed material, API credentials, and unsafe `.env` files | Secrets committed once can remain exploitable for years unless found and rotated |
 | **Macaroon least privilege** | Detect integrations using `admin.macaroon` where readonly, invoice, or custom-baked macaroons are sufficient | Limits blast radius if an integration server or operator workstation is compromised |
 | **Remediation automation** | Add `lnaudit suggest-config` to generate safe config patches from findings | Helps operators move from detection to repair without manually translating every finding |
-| **Watchtower health** | Verify configured watchtowers are reachable and usable, not just present in config | Offline or stale watchtower coverage can leave channels exposed during downtime |
-| **Backup verification** | Check channel backup freshness and warn when backups are not stored off-node | A local-only backup can disappear with the same host failure or compromise |
-| **Exposure limits** | Add configurable hot-wallet, channel-capacity, and node-balance thresholds | Operators need explicit limits on how much value any one node or channel can expose |
-| **Incident readiness** | Add checks for documented key rotation, fund sweep, channel close, and restore procedures | Response speed matters when keys, macaroons, or node access are suspected compromised |
-| **Security automation** | Add SARIF output for code scanning and CI/CD security workflows | Makes lnaudit easier to run continuously in production infrastructure pipelines |
+| **Watchtower health** | ✅ Checks watchtower URI posture in config and supports optional active probing from the scanning host | Offline or stale watchtower coverage can leave channels exposed during downtime |
+| **Backup verification** | ✅ Checks backup file presence when local node state indicates channel data exists | Missing channel backups increase recovery risk after node compromise or host failure |
+| **Exposure limits** | ✅ Configurable hot-wallet, channel-capacity, and node-exposure thresholds (`--max-*-sats`) | Operators need explicit limits on how much value any one node or channel can expose |
+| **Incident readiness** | ✅ Runbook coverage checks for key rotation, sweep, channel close, and restore | Response speed matters when keys, macaroons, or node access are suspected compromised |
+| **Security automation** | ✅ SARIF output mode for code scanning and CI/CD (`--format sarif`) | Makes lnaudit easier to run continuously in production infrastructure pipelines |
 
 ---
 
