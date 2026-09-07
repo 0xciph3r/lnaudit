@@ -81,7 +81,10 @@ func TestCheckSecretHygieneLeaks_SensitiveEnvWithUnsafePerms(t *testing.T) {
 	}
 	envPath := filepath.Join(envDir, ".env.production")
 	content := []byte("API_KEY=abc123\nNODE_ENV=production\n")
-	if err := os.WriteFile(envPath, content, 0o644); err != nil {
+	if err := os.WriteFile(envPath, content, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chmod(envPath, 0o644); err != nil {
 		t.Fatal(err)
 	}
 

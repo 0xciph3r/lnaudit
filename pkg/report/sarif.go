@@ -2,8 +2,8 @@ package report
 
 import (
 	"crypto/sha256"
-	"encoding/json"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"io"
 	"regexp"
@@ -36,14 +36,14 @@ type sarifDriver struct {
 }
 
 type sarifRule struct {
-	ID               string              `json:"id"`
-	ShortDescription sarifMessage        `json:"shortDescription,omitempty"`
-	FullDescription  sarifMessage        `json:"fullDescription,omitempty"`
-	Help             sarifMessage        `json:"help,omitempty"`
-	Properties       *sarifRulePropertys `json:"properties,omitempty"`
+	ID               string               `json:"id"`
+	ShortDescription sarifMessage         `json:"shortDescription,omitempty"`
+	FullDescription  sarifMessage         `json:"fullDescription,omitempty"`
+	Help             sarifMessage         `json:"help,omitempty"`
+	Properties       *sarifRuleProperties `json:"properties,omitempty"`
 }
 
-type sarifRulePropertys struct {
+type sarifRuleProperties struct {
 	Module    string   `json:"module,omitempty"`
 	Severity  string   `json:"severity,omitempty"`
 	Tags      []string `json:"tags,omitempty"`
@@ -51,10 +51,10 @@ type sarifRulePropertys struct {
 }
 
 type sarifResult struct {
-	RuleID              string            `json:"ruleId"`
-	Level               string            `json:"level"`
-	Message             sarifMessage      `json:"message"`
-	PartialFingerprints map[string]string `json:"partialFingerprints,omitempty"`
+	RuleID              string               `json:"ruleId"`
+	Level               string               `json:"level"`
+	Message             sarifMessage         `json:"message"`
+	PartialFingerprints map[string]string    `json:"partialFingerprints,omitempty"`
 	Properties          *sarifResultProperty `json:"properties,omitempty"`
 }
 
@@ -145,7 +145,7 @@ func sarifRulesFromFindings(findings []scanner.Finding) []sarifRule {
 			ShortDescription: sarifMessage{Text: sarifRuleTitle(f.Title)},
 			FullDescription:  sarifMessage{Text: firstNonEmpty(f.Description, f.Title)},
 			Help:             sarifMessage{Text: firstNonEmpty(f.Remediation, "Review this finding and apply least-privilege hardening.")},
-			Properties: &sarifRulePropertys{
+			Properties: &sarifRuleProperties{
 				Module:    f.Module,
 				Severity:  strings.ToLower(f.Severity.String()),
 				Tags:      []string{"module:" + f.Module, "severity:" + strings.ToLower(f.Severity.String())},

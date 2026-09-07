@@ -124,14 +124,14 @@ func CheckWatchtowerConnectivity(cfg *config.LndConfig, probe bool) []scanner.Fi
 	return findings
 }
 
-func parseTowerAddress(raw string) (addr string, onion bool, ok bool) {
+func parseTowerAddress(raw string) (addr string, onion, ok bool) {
 	uri := strings.TrimSpace(raw)
 	if uri == "" {
 		return "", false, false
 	}
 
 	parts := strings.SplitN(uri, "@", 2)
-	if len(parts) != 2 || parts[1] == "" {
+	if len(parts) != 2 || strings.TrimSpace(parts[0]) == "" || parts[1] == "" {
 		return "", false, false
 	}
 	hostPort := parts[1]

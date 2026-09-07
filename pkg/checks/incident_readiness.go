@@ -108,7 +108,7 @@ func CheckIncidentReadiness(runbookDir, scanRoot, lndDir, lndDataDir string) []s
 			return nil
 		}
 
-		data, err := os.ReadFile(absPath)
+		data, err := readRunbookFile(absPath)
 		if err != nil {
 			return nil
 		}
@@ -150,9 +150,6 @@ func CheckIncidentReadiness(runbookDir, scanRoot, lndDir, lndDataDir string) []s
 	return findings
 }
 
-func max(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
+func readRunbookFile(path string) ([]byte, error) {
+	return os.ReadFile(path)
 }
