@@ -28,6 +28,12 @@ var (
 	verbose      bool
 	noColor      bool
 	quiet        bool
+	runbookDir   string
+
+	maxHotWalletSats    int64
+	maxNodeExposureSats int64
+	maxChannelCapSats   int64
+	probeWatchtowers    bool
 )
 
 type scanOptions struct {
@@ -37,6 +43,12 @@ type scanOptions struct {
 	macaroonPath string
 	tlsCertPath  string
 	scanRoot     string
+	runbookDir   string
+
+	maxHotWalletSats    int64
+	maxNodeExposureSats int64
+	maxChannelCapSats   int64
+	probeWatchtowers    bool
 }
 
 var scanCmd = &cobra.Command{
@@ -57,7 +69,7 @@ the LND configuration at common paths (~/.lnd/lnd.conf).`,
 func init() {
 	scanCmd.Flags().StringVar(&configPath, "config", "", "path to lnd.conf (auto-detected if not set)")
 	scanCmd.Flags().StringVar(&lndDir, "lnddir", "", "LND data directory (auto-detected if not set)")
-	scanCmd.Flags().StringVar(&outputFormat, "format", "table", "output format: table, json")
+	scanCmd.Flags().StringVar(&outputFormat, "format", "table", "output format: table, json, sarif")
 	scanCmd.Flags().StringVar(&minSeverity, "min-severity", "low", "minimum severity to display: critical, high, medium, low, info")
 	scanCmd.Flags().StringVar(&failOn, "fail-on", "critical", "exit 1 if any finding at or above this severity")
 	scanCmd.Flags().StringVar(&connectAddr, "connect", "", "gRPC address of running LND node (e.g., localhost:10009)")
@@ -67,13 +79,19 @@ func init() {
 	scanCmd.Flags().BoolVar(&verbose, "verbose", false, "show INFO-level findings")
 	scanCmd.Flags().BoolVar(&noColor, "no-color", false, "disable colored output")
 	scanCmd.Flags().BoolVar(&quiet, "quiet", false, "only output the score")
+	scanCmd.Flags().StringVar(&runbookDir, "runbook-dir", "", "directory containing incident response runbooks (check is skipped when unset)")
+
+	scanCmd.Flags().Int64Var(&maxHotWalletSats, "max-hot-wallet-sats", 0, "alert when confirmed on-chain wallet balance exceeds this threshold (0 disables)")
+	scanCmd.Flags().Int64Var(&maxNodeExposureSats, "max-node-exposure-sats", 0, "alert when total node exposure (wallet + local channel balance) exceeds this threshold (0 disables)")
+	scanCmd.Flags().Int64Var(&maxChannelCapSats, "max-channel-capacity-sats", 0, "alert when a channel capacity exceeds this threshold (0 disables)")
+	scanCmd.Flags().BoolVar(&probeWatchtowers, "probe-watchtowers", false, "actively probe watchtower endpoints from the scanning host")
 
 	rootCmd.AddCommand(scanCmd)
 }
 
 // isInteractive returns true when we should show the Bubble Tea UI.
 func isInteractive() bool {
-	if quiet || outputFormat == "json" || noColor {
+	if quiet || outputFormat == "json" || outputFormat == "sarif" || noColor {
 		return false
 	}
 	return term.IsTerminal(int(os.Stderr.Fd()))
@@ -169,6 +187,12 @@ func executeScanWithOptions(opts scanOptions, progress func(string)) (*scanner.R
 		for _, f := range checks.CheckChannelSafety(cfg) {
 			r.Add(f)
 		}
+		for _, f := range checks.CheckWatchtowerConnectivity(cfg, opts.probeWatchtowers) {
+			r.Add(f)
+		}
+		for _, f := range checks.CheckChannelBackupReadiness(paths.ChannelBackup(), opts.scanRoot, paths.LndDir, paths.DataDir) {
+			r.Add(f)
+		}
 
 		progress("Checking network exposure")
 		for _, f := range checks.CheckNetworkExposure(cfg) {
@@ -195,6 +219,11 @@ func executeScanWithOptions(opts scanOptions, progress func(string)) (*scanner.R
 		}
 		for _, f := range checks.CheckGossipSecurity(cfg) {
 			r.Add(f)
+		}
+		if opts.runbookDir != "" {
+			for _, f := range checks.CheckIncidentReadiness(opts.runbookDir, opts.scanRoot, paths.LndDir, paths.DataDir) {
+				r.Add(f)
+			}
 		}
 	}
 
@@ -240,6 +269,23 @@ func executeScanWithOptions(opts scanOptions, progress func(string)) (*scanner.R
 				{"zero-conf", "Detecting zero-conf channels", checks.CheckZeroConfChannels},
 				{"htlc-limits", "Auditing HTLC limits", checks.CheckHighHTLCLimits},
 			}
+			if opts.maxHotWalletSats > 0 || opts.maxNodeExposureSats > 0 || opts.maxChannelCapSats > 0 {
+				liveChecks = append(liveChecks, struct {
+					name  string
+					label string
+					fn    func(lngrpc.LndClient) ([]scanner.Finding, error)
+				}{
+					"exposure-limits",
+					"Checking exposure limits",
+					func(c lngrpc.LndClient) ([]scanner.Finding, error) {
+						return checks.CheckExposureLimits(c, checks.ExposureLimits{
+							MaxHotWalletSats:    opts.maxHotWalletSats,
+							MaxNodeExposureSats: opts.maxNodeExposureSats,
+							MaxChannelCapSats:   opts.maxChannelCapSats,
+						})
+					},
+				})
+			}
 
 			for _, lc := range liveChecks {
 				progress(lc.label)
@@ -267,14 +313,42 @@ func executeScan(progress func(string)) (*scanner.Report, []string, error) {
 		macaroonPath: macaroonPath,
 		tlsCertPath:  tlsCertPath,
 		scanRoot:     scanRoot,
+		runbookDir:   runbookDir,
+
+		maxHotWalletSats:    maxHotWalletSats,
+		maxNodeExposureSats: maxNodeExposureSats,
+		maxChannelCapSats:   maxChannelCapSats,
+		probeWatchtowers:    probeWatchtowers,
 	}, progress)
 }
 
 func runScan(cmd *cobra.Command, args []string) error {
+	if err := validateScanFlagValues(outputFormat, failOn, minSeverity); err != nil {
+		return err
+	}
+
 	if isInteractive() {
 		return runInteractiveScan()
 	}
 	return runNonInteractiveScan()
+}
+
+func validateScanFlagValues(format, failOnValue, minSeverityValue string) error {
+	switch format {
+	case "table", "json", "sarif":
+	default:
+		return fmt.Errorf("invalid --format %q: supported formats are table, json, sarif", format)
+	}
+
+	if _, err := scanner.ParseSeverity(failOnValue); err != nil {
+		return fmt.Errorf("invalid --fail-on value %q: %w", failOnValue, err)
+	}
+
+	if _, err := scanner.ParseSeverity(minSeverityValue); err != nil {
+		return fmt.Errorf("invalid --min-severity value %q: %w", minSeverityValue, err)
+	}
+
+	return nil
 }
 
 func runInteractiveScan() error {
@@ -357,6 +431,10 @@ func renderReport(r *scanner.Report) error {
 		case "json":
 			if err := report.JSONWriterWithScore(os.Stdout, display, fullScore, fullRating, fullSummary); err != nil {
 				return fmt.Errorf("writing JSON: %w", err)
+			}
+		case "sarif":
+			if err := report.SARIFWriterWithScore(os.Stdout, display, fullScore, fullRating, fullSummary); err != nil {
+				return fmt.Errorf("writing SARIF: %w", err)
 			}
 		default:
 			report.TableWriterWithScore(os.Stdout, display, fullScore, fullRating, fullSummary, !noColor)

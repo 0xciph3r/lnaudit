@@ -134,7 +134,7 @@ func CheckMacaroonLeastPrivilegeInRoot(scanRoot, lndDir, lndDataDir string) []sc
 			return fs.SkipAll
 		}
 
-		data, readErr := os.ReadFile(absPath)
+		data, readErr := readIntegrationConfigFile(absPath)
 		if readErr != nil {
 			return nil
 		}
@@ -214,4 +214,8 @@ func containsAny(content string, needles []string) bool {
 		}
 	}
 	return false
+}
+
+func readIntegrationConfigFile(path string) ([]byte, error) {
+	return os.ReadFile(path)
 }
