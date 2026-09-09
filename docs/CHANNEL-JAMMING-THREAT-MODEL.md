@@ -1,4 +1,4 @@
-# Channel-Jamming Threat Model and Observability Spec (PR1)
+# Channel-Jamming Threat Model and Observability Spec (v1)
 
 This document defines the v1 threat model and data contract for channel-jamming analysis in `lnaudit`.
 It is intentionally scoped to modeling, observability, and measurable acceptance gates. It does not
@@ -100,15 +100,27 @@ Confidence must map cleanly to existing severity/exit semantics so CI gating rem
 
 Before enabling release-grade temporal findings:
 
-1. False-positive budget: `<= 1` HIGH false positive per node per 7 days on benign replay corpus
-2. True-positive coverage: sustained slot and sustained liquidity jam fixtures are detected
-3. Determinism: identical input timeline yields identical JSON/SARIF outputs
-4. Explainability: each finding includes metric, threshold/baseline, window, sample count, and confidence
-5. Compatibility: existing `scan`, `--min-severity`, `--fail-on`, and SARIF workflows stay backward-compatible
+1. **False-positive budget**
+   - Measurement unit: one replay interval equals exactly `168h` of monotonic timeline data (7 x 24h).
+   - Pass criterion: per replay interval, HIGH-severity false positives with confidence `Sustained` or `Corroborated` must be `<= 1`.
+2. **True-positive coverage**
+   - Required fixtures: sustained slot-jam and sustained liquidity-jam corpora.
+   - Pass criterion: each required fixture must emit at least one HIGH-severity finding with confidence `Sustained` or `Corroborated`.
+3. **Determinism**
+   - Input: identical timeline fixture bytes + identical CLI flags.
+   - Pass criterion: JSON output bytes are identical; SARIF logical findings are identical (ordering and fingerprints stable).
+4. **Explainability completeness**
+   - Required evidence fields per finding: metric name, measured value, threshold or baseline, observation window, sample count, confidence class.
+   - Pass criterion: 100% of jamming findings include all required evidence fields.
+5. **Compatibility**
+   - Existing `scan` contract remains unchanged for non-jamming checks.
+   - Pass criterion: `scan` runtime profile, `--min-severity`, `--fail-on`, and SARIF behavior remain backward-compatible.
+6. **Single-snapshot guardrail**
+   - Pass criterion: one-snapshot anomalies can be emitted only as `Observed`; they must not produce HIGH severity by themselves.
 
-## PR decomposition
+## Phase decomposition
 
-- **PR1 (this phase):** threat model + observability spec + measurable gates
-- **PR2:** pure analyzer + fixture corpus + deterministic scoring tests
-- **PR3:** CLI/report integration (`jamming analyze`, JSON/SARIF evidence/confidence fields)
-- **PR4:** operator response playbook + migration guidance for legacy jamming checks
+- **Phase 1:** threat model + observability spec + measurable gates
+- **Phase 2:** pure analyzer + fixture corpus + deterministic scoring tests
+- **Phase 3:** CLI/report integration (`jamming analyze`, JSON/SARIF evidence/confidence fields)
+- **Phase 4:** operator response playbook + migration guidance for legacy jamming checks
