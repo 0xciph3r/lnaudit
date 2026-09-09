@@ -739,13 +739,14 @@ lnaudit scan --connect mynode.local:10009 \\
 ■ Live
 ────────────────────────────────────────────────────────────
 
-  HIGH      Channel 823456789 has 25 pending HTLCs (possible jamming)
+  HIGH      Channel 823456789 has 25 pending HTLCs (elevated pressure)
       This channel has an unusually high number of pending
-      HTLCs. This may indicate an active channel jamming attack.
+      HTLCs. This may indicate sustained pressure that warrants
+      temporal analysis before escalation.
 
       Recommendation:
-        Consider disconnecting from this peer or closing the
-        channel. Lower default-remote-max-htlcs in lnd.conf.
+        Review this pattern over a time window and tighten
+        default-remote-max-htlcs in lnd.conf where appropriate.
 
   HIGH      1 zero-conf channel(s) active (500000 sats total capacity)
       Zero-confirmation channels are active on this node.

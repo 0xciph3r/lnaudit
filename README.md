@@ -68,7 +68,7 @@ Most catastrophic losses in Bitcoin infrastructure have resulted not from crypto
 - **TLS certificate validation**: Check expiration, key strength, and self-signed status
 - **Network exposure analysis**: Detect binds to `0.0.0.0`, UPnP, and non-loopback listeners
 - **Privacy leak detection**: Audit Tor configuration, SCID aliases, and clearnet IP disclosure
-- **Channel-jamming awareness**: Detect risky HTLC limits in configuration and live channels with abnormal pending HTLC counts
+- **Channel-jamming awareness**: Detect jamming-exposure posture and pending-HTLC pressure signals in config and live channel state
 - **Protocol risk detection**: Flag zero-conf, no-anchor, wumbo, circular routing, weak timelocks, and unsafe fee-estimation choices
 - **CVE mapping**: Cross-reference running LND version against known vulnerabilities
 - **Port scanning**: Probe common Bitcoin and LND ports for unexpected exposure
@@ -449,7 +449,7 @@ lnaudit performs 60+ security checks across static configuration, filesystem, ne
 | **Gossip Security** | Gossip ban threshold, graph sync settings, gossip rate limiting guidance | Gossip flooding, CPU/memory exhaustion, eclipse risk |
 | **Network Exposure** | P2P and RPC listener binding, UPnP, NAT configuration | Bind to 0.0.0.0, automatic port forwarding |
 | **Port Scanning** | Active probing of common LND and Bitcoin Core ports | Unexpected service exposure, open gRPC/REST APIs |
-| **Live Checks** | Version vs CVE database, chain sync, peer connectivity, force-close state, balance thresholds, zero-conf channels, high pending HTLCs, negotiated HTLC limits | Running vulnerable versions, offline nodes, fund exposure, active channel jamming, unsafe live channel state |
+| **Live Checks** | Version vs CVE database, chain sync, peer connectivity, force-close state, balance thresholds, zero-conf channels, high pending HTLCs, negotiated HTLC limits | Running vulnerable versions, offline nodes, fund exposure, possible jamming pressure signals, unsafe live channel state |
 
 The scanner is intentionally split between static checks that can run before deployment and live checks that require read-only gRPC access to a running node.
 
@@ -598,6 +598,7 @@ lnaudit's roadmap focuses on controls that directly improve Lightning node secur
 | **Exposure limits** | ✅ Configurable hot-wallet, channel-capacity, and node-exposure thresholds (`--max-*-sats`) | Operators need explicit limits on how much value any one node or channel can expose |
 | **Incident readiness** | ✅ Runbook coverage checks for key rotation, sweep, channel close, and restore | Response speed matters when keys, macaroons, or node access are suspected compromised |
 | **Security automation** | ✅ SARIF output mode for code scanning and CI/CD (`--format sarif`) | Makes lnaudit easier to run continuously in production infrastructure pipelines |
+| **Channel-jamming temporal analysis** | 🚧 Threat model + observability spec tracked in [Issue #14](https://github.com/0xciph3r/lnaudit/issues/14); implementation split into phased follow-up issues | Reduces false positives and improves operator decisions with deterministic, evidence-backed temporal signals |
 
 ---
 
