@@ -191,7 +191,7 @@ func (c *realClient) ListChannels() ([]Channel, error) {
 
 	channels := make([]Channel, len(resp.Channels))
 	for i, ch := range resp.Channels {
-		c := Channel{
+		channel := Channel{
 			ChanID:          ch.ChanId,
 			RemotePubkey:    truncate(ch.RemotePubkey),
 			Capacity:        ch.Capacity,
@@ -204,10 +204,13 @@ func (c *realClient) ListChannels() ([]Channel, error) {
 			PushAmountSat:   ch.PushAmountSat,
 			CommitmentType:  ch.CommitmentType.String(),
 		}
-		if ch.RemoteConstraints != nil {
-			c.RemoteMaxHTLCs = ch.RemoteConstraints.MaxAcceptedHtlcs
+		for _, pending := range ch.PendingHtlcs {
+			channel.PendingHTLCValueSat += pending.Amount
 		}
-		channels[i] = c
+		if ch.RemoteConstraints != nil {
+			channel.RemoteMaxHTLCs = ch.RemoteConstraints.MaxAcceptedHtlcs
+		}
+		channels[i] = channel
 	}
 
 	return channels, nil

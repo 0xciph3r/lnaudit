@@ -23,11 +23,12 @@ type Channel struct {
 	Private       bool
 
 	// Extended fields for security checks
-	NumPendingHTLCs int
-	ZeroConf        bool
-	PushAmountSat   uint64
-	RemoteMaxHTLCs  uint32
-	CommitmentType  string
+	NumPendingHTLCs     int
+	PendingHTLCValueSat int64
+	ZeroConf            bool
+	PushAmountSat       uint64
+	RemoteMaxHTLCs      uint32
+	CommitmentType      string
 }
 
 // PendingForceClose represents a channel being force-closed.
