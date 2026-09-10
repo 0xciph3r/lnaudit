@@ -1,0 +1,64 @@
+{
+  "snapshots": [
+    {
+      "timestamp": "2026-01-04T00:00:00Z",
+      "channels": [
+        {
+          "chan_id": 4001,
+          "remote_pubkey": "02squat0001",
+          "capacity_sat": 1200000,
+          "local_balance_sat": 600000,
+          "remote_balance_sat": 600000,
+          "pending_htlc_count": 19,
+          "pending_htlc_value_sat": 45000,
+          "remote_max_htlcs": 30
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-01-04T00:01:00Z",
+      "channels": [
+        {
+          "chan_id": 4001,
+          "remote_pubkey": "02squat0001",
+          "capacity_sat": 1200000,
+          "local_balance_sat": 600000,
+          "remote_balance_sat": 600000,
+          "pending_htlc_count": 19,
+          "pending_htlc_value_sat": 48000,
+          "remote_max_htlcs": 30
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-01-04T00:02:00Z",
+      "channels": [
+        {
+          "chan_id": 4001,
+          "remote_pubkey": "02squat0001",
+          "capacity_sat": 1200000,
+          "local_balance_sat": 600000,
+          "remote_balance_sat": 600000,
+          "pending_htlc_count": 19,
+          "pending_htlc_value_sat": 47000,
+          "remote_max_htlcs": 30
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-01-04T00:03:00Z",
+      "channels": [
+        {
+          "chan_id": 4001,
+          "remote_pubkey": "02squat0001",
+          "capacity_sat": 1200000,
+          "local_balance_sat": 600000,
+          "remote_balance_sat": 600000,
+          "pending_htlc_count": 19,
+          "pending_htlc_value_sat": 46000,
+          "remote_max_htlcs": 30
+        }
+      ]
+    }
+  ]
+}
