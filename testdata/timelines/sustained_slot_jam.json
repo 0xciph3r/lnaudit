@@ -1,0 +1,79 @@
+{
+  "snapshots": [
+    {
+      "timestamp": "2026-01-02T00:00:00Z",
+      "channels": [
+        {
+          "chan_id": 2001,
+          "remote_pubkey": "02slotjam0001",
+          "capacity_sat": 1000000,
+          "local_balance_sat": 450000,
+          "remote_balance_sat": 550000,
+          "pending_htlc_count": 22,
+          "pending_htlc_value_sat": 55000,
+          "remote_max_htlcs": 30
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-01-02T00:01:00Z",
+      "channels": [
+        {
+          "chan_id": 2001,
+          "remote_pubkey": "02slotjam0001",
+          "capacity_sat": 1000000,
+          "local_balance_sat": 450000,
+          "remote_balance_sat": 550000,
+          "pending_htlc_count": 24,
+          "pending_htlc_value_sat": 62000,
+          "remote_max_htlcs": 30
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-01-02T00:02:00Z",
+      "channels": [
+        {
+          "chan_id": 2001,
+          "remote_pubkey": "02slotjam0001",
+          "capacity_sat": 1000000,
+          "local_balance_sat": 450000,
+          "remote_balance_sat": 550000,
+          "pending_htlc_count": 25,
+          "pending_htlc_value_sat": 67000,
+          "remote_max_htlcs": 30
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-01-02T00:03:00Z",
+      "channels": [
+        {
+          "chan_id": 2001,
+          "remote_pubkey": "02slotjam0001",
+          "capacity_sat": 1000000,
+          "local_balance_sat": 450000,
+          "remote_balance_sat": 550000,
+          "pending_htlc_count": 23,
+          "pending_htlc_value_sat": 59000,
+          "remote_max_htlcs": 30
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-01-02T00:04:00Z",
+      "channels": [
+        {
+          "chan_id": 2001,
+          "remote_pubkey": "02slotjam0001",
+          "capacity_sat": 1000000,
+          "local_balance_sat": 450000,
+          "remote_balance_sat": 550000,
+          "pending_htlc_count": 22,
+          "pending_htlc_value_sat": 56000,
+          "remote_max_htlcs": 30
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "snapshots": [
+    {
+      "timestamp": "2026-01-06T00:00:00Z",
+      "channels": [
+        {
+          "chan_id": 6001,
+          "remote_pubkey": "02corr0001",
+          "capacity_sat": 1000000,
+          "local_balance_sat": 300000,
+          "remote_balance_sat": 700000,
+          "pending_htlc_count": 22,
+          "pending_htlc_value_sat": 700000,
+          "remote_max_htlcs": 30
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-01-06T00:01:00Z",
+      "channels": [
+        {
+          "chan_id": 6001,
+          "remote_pubkey": "02corr0001",
+          "capacity_sat": 1000000,
+          "local_balance_sat": 300000,
+          "remote_balance_sat": 700000,
+          "pending_htlc_count": 23,
+          "pending_htlc_value_sat": 710000,
+          "remote_max_htlcs": 30
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-01-06T00:02:00Z",
+      "channels": [
+        {
+          "chan_id": 6001,
+          "remote_pubkey": "02corr0001",
+          "capacity_sat": 1000000,
+          "local_balance_sat": 300000,
+          "remote_balance_sat": 700000,
+          "pending_htlc_count": 24,
+          "pending_htlc_value_sat": 720000,
+          "remote_max_htlcs": 30
+        }
+      ]
+    }
+  ]
+}
