@@ -138,6 +138,9 @@ lnaudit scan --lnddir /mnt/lnd
 # Restrict filesystem secret scans to a specific root
 lnaudit scan --config ~/.lnd/lnd.conf --scan-root ~/infra/lightning
 
+# Analyze jamming timeline fixture (temporal analyzer)
+lnaudit jamming analyze --from-file testdata/timelines/sustained_slot_jam.json
+
 # Tune exposure thresholds (satoshis)
 lnaudit scan --connect localhost:10009 \
   --max-hot-wallet-sats 5000000 \
@@ -156,6 +159,7 @@ Backup readiness checks run only when the scanner can see the local LND data dir
 Watchtower endpoint probing is opt-in (`--probe-watchtowers`) and reflects scanner-host reachability, not guaranteed LND-host reachability.
 Exposure-threshold findings are opt-in and run only when one or more `--max-*-sats` flags are set above zero.
 Backup readiness checks do not infer off-node storage posture from local filename heuristics.
+`lnaudit jamming analyze` is a separate temporal-analysis flow and does not change `lnaudit scan` behavior or latency.
 
 ### Live Node Scan
 

@@ -334,21 +334,12 @@ func runScan(cmd *cobra.Command, args []string) error {
 }
 
 func validateScanFlagValues(format, failOnValue, minSeverityValue string) error {
-	switch format {
-	case "table", "json", "sarif":
-	default:
-		return fmt.Errorf("invalid --format %q: supported formats are table, json, sarif", format)
+	allowedFormats := map[string]struct{}{
+		"table": {},
+		"json":  {},
+		"sarif": {},
 	}
-
-	if _, err := scanner.ParseSeverity(failOnValue); err != nil {
-		return fmt.Errorf("invalid --fail-on value %q: %w", failOnValue, err)
-	}
-
-	if _, err := scanner.ParseSeverity(minSeverityValue); err != nil {
-		return fmt.Errorf("invalid --min-severity value %q: %w", minSeverityValue, err)
-	}
-
-	return nil
+	return validateOutputFlagValues(format, allowedFormats, "table, json, sarif", failOnValue, minSeverityValue)
 }
 
 func runInteractiveScan() error {

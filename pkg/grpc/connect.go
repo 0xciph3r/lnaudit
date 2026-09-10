@@ -204,6 +204,9 @@ func (c *realClient) ListChannels() ([]Channel, error) {
 			PushAmountSat:   ch.PushAmountSat,
 			CommitmentType:  ch.CommitmentType.String(),
 		}
+		for _, pending := range ch.PendingHtlcs {
+			c.PendingHTLCValueSat += pending.Amount
+		}
 		if ch.RemoteConstraints != nil {
 			c.RemoteMaxHTLCs = ch.RemoteConstraints.MaxAcceptedHtlcs
 		}

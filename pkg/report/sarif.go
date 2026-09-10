@@ -59,10 +59,12 @@ type sarifResult struct {
 }
 
 type sarifResultProperty struct {
-	Module      string `json:"module,omitempty"`
-	Severity    string `json:"severity,omitempty"`
-	Remediation string `json:"remediation,omitempty"`
-	Reference   string `json:"reference,omitempty"`
+	Module      string                 `json:"module,omitempty"`
+	Severity    string                 `json:"severity,omitempty"`
+	Remediation string                 `json:"remediation,omitempty"`
+	Reference   string                 `json:"reference,omitempty"`
+	Confidence  string                 `json:"confidence,omitempty"`
+	Evidence    map[string]interface{} `json:"evidence,omitempty"`
 }
 
 type sarifMessage struct {
@@ -205,8 +207,7 @@ func sarifStableFingerprint(f scanner.Finding) string {
 		f.Module,
 		instanceKey,
 	}, "|")
-	sum := sha256.Sum256([]byte(raw))
-	return hex.EncodeToString(sum[:])
+	return stableHash(raw)
 }
 
 func sarifInstanceKey(f scanner.Finding) string {
@@ -230,4 +231,9 @@ func firstNonEmpty(primary, fallback string) string {
 		return primary
 	}
 	return fallback
+}
+
+func stableHash(raw string) string {
+	sum := sha256.Sum256([]byte(raw))
+	return hex.EncodeToString(sum[:])
 }
