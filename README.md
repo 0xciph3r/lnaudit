@@ -98,21 +98,26 @@ Download the latest release for your platform:
 ```bash
 # Linux (amd64)
 curl -LO https://github.com/0xciph3r/lnaudit/releases/latest/download/lnaudit-linux-amd64
+curl -LO https://github.com/0xciph3r/lnaudit/releases/latest/download/SHA256SUMS
+grep ' lnaudit-linux-amd64$' SHA256SUMS | sha256sum -c -
 chmod +x lnaudit-linux-amd64
 sudo mv lnaudit-linux-amd64 /usr/local/bin/lnaudit
 
 # Linux (arm64)
 curl -LO https://github.com/0xciph3r/lnaudit/releases/latest/download/lnaudit-linux-arm64
+grep ' lnaudit-linux-arm64$' SHA256SUMS | sha256sum -c -
 chmod +x lnaudit-linux-arm64
 sudo mv lnaudit-linux-arm64 /usr/local/bin/lnaudit
 
 # macOS (Apple Silicon)
 curl -LO https://github.com/0xciph3r/lnaudit/releases/latest/download/lnaudit-darwin-arm64
+grep ' lnaudit-darwin-arm64$' SHA256SUMS | shasum -a 256 -c -
 chmod +x lnaudit-darwin-arm64
 sudo mv lnaudit-darwin-arm64 /usr/local/bin/lnaudit
 
 # macOS (Intel)
 curl -LO https://github.com/0xciph3r/lnaudit/releases/latest/download/lnaudit-darwin-amd64
+grep ' lnaudit-darwin-amd64$' SHA256SUMS | shasum -a 256 -c -
 chmod +x lnaudit-darwin-amd64
 sudo mv lnaudit-darwin-amd64 /usr/local/bin/lnaudit
 
@@ -124,12 +129,10 @@ Invoke-WebRequest -Uri "https://github.com/0xciph3r/lnaudit/releases/latest/down
 Invoke-WebRequest -Uri "https://github.com/0xciph3r/lnaudit/releases/latest/download/lnaudit-windows-arm64.exe" -OutFile "lnaudit.exe"
 .\lnaudit.exe version
 
-# Verify checksums
-curl -LO https://github.com/0xciph3r/lnaudit/releases/latest/download/SHA256SUMS
-# Linux
-sha256sum -c SHA256SUMS | grep lnaudit-
-# macOS
-shasum -a 256 -c SHA256SUMS | grep lnaudit-
+# Windows (PowerShell, checksum verification)
+Invoke-WebRequest -Uri "https://github.com/0xciph3r/lnaudit/releases/latest/download/SHA256SUMS" -OutFile "SHA256SUMS"
+$checksum = (Select-String -Path "SHA256SUMS" -Pattern " lnaudit-windows-amd64.exe$").Line.Split(" ")[0]
+if ((Get-FileHash .\lnaudit.exe -Algorithm SHA256).Hash.ToLower() -ne $checksum.ToLower()) { throw "Checksum mismatch" }
 ```
 
 ### Prerequisites
@@ -622,7 +625,7 @@ lnaudit's roadmap focuses on controls that directly improve Lightning node secur
 | **Exposure limits** | ✅ Configurable hot-wallet, channel-capacity, and node-exposure thresholds (`--max-*-sats`) | Operators need explicit limits on how much value any one node or channel can expose |
 | **Incident readiness** | ✅ Runbook coverage checks for key rotation, sweep, channel close, and restore | Response speed matters when keys, macaroons, or node access are suspected compromised |
 | **Security automation** | ✅ SARIF output mode for code scanning and CI/CD (`--format sarif`) | Makes lnaudit easier to run continuously in production infrastructure pipelines |
-| **Channel-jamming temporal analysis** | 🚧 Threat model + observability spec tracked in [Issue #14](https://github.com/0xciph3r/lnaudit/issues/14); implementation split into phased follow-up issues | Reduces false positives and improves operator decisions with deterministic, evidence-backed temporal signals |
+| **Channel-jamming temporal analysis** | ✅ `lnaudit jamming analyze` is implemented with deterministic replay, confidence/evidence outputs, and strict validation | Reduces false positives and improves operator decisions with deterministic, evidence-backed temporal signals |
 
 ---
 

@@ -344,21 +344,26 @@ sudo mv bin/lnaudit /usr/local/bin/lnaudit`}</${CodeBlock}>
                 <${Heading} as="h3" size="sm" mt="16px" mb="6px" color=${C.ink}>Download Release Binary</${Heading}>
                 <${CodeBlock}>${`# Linux (amd64)
 curl -LO https://github.com/0xciph3r/lnaudit/releases/latest/download/lnaudit-linux-amd64
+curl -LO https://github.com/0xciph3r/lnaudit/releases/latest/download/SHA256SUMS
+grep ' lnaudit-linux-amd64$' SHA256SUMS | sha256sum -c -
 chmod +x lnaudit-linux-amd64
 sudo mv lnaudit-linux-amd64 /usr/local/bin/lnaudit
 
 # Linux (arm64)
 curl -LO https://github.com/0xciph3r/lnaudit/releases/latest/download/lnaudit-linux-arm64
+grep ' lnaudit-linux-arm64$' SHA256SUMS | sha256sum -c -
 chmod +x lnaudit-linux-arm64
 sudo mv lnaudit-linux-arm64 /usr/local/bin/lnaudit
 
 # macOS (Apple Silicon)
 curl -LO https://github.com/0xciph3r/lnaudit/releases/latest/download/lnaudit-darwin-arm64
+grep ' lnaudit-darwin-arm64$' SHA256SUMS | shasum -a 256 -c -
 chmod +x lnaudit-darwin-arm64
 sudo mv lnaudit-darwin-arm64 /usr/local/bin/lnaudit
 
 # macOS (Intel)
 curl -LO https://github.com/0xciph3r/lnaudit/releases/latest/download/lnaudit-darwin-amd64
+grep ' lnaudit-darwin-amd64$' SHA256SUMS | shasum -a 256 -c -
 chmod +x lnaudit-darwin-amd64
 sudo mv lnaudit-darwin-amd64 /usr/local/bin/lnaudit
 
@@ -370,10 +375,10 @@ Invoke-WebRequest -Uri "https://github.com/0xciph3r/lnaudit/releases/latest/down
 Invoke-WebRequest -Uri "https://github.com/0xciph3r/lnaudit/releases/latest/download/lnaudit-windows-arm64.exe" -OutFile "lnaudit.exe"
 .\lnaudit.exe version
 
-# Verify checksums
-curl -LO https://github.com/0xciph3r/lnaudit/releases/latest/download/SHA256SUMS
-sha256sum -c SHA256SUMS | grep lnaudit-
-shasum -a 256 -c SHA256SUMS | grep lnaudit-`}</${CodeBlock}>
+# Windows (PowerShell, checksum verification)
+Invoke-WebRequest -Uri "https://github.com/0xciph3r/lnaudit/releases/latest/download/SHA256SUMS" -OutFile "SHA256SUMS"
+$checksum = (Select-String -Path "SHA256SUMS" -Pattern " lnaudit-windows-amd64.exe$").Line.Split(" ")[0]
+if ((Get-FileHash .\lnaudit.exe -Algorithm SHA256).Hash.ToLower() -ne $checksum.ToLower()) { throw "Checksum mismatch" }`}</${CodeBlock}>
 
                 <${Heading} as="h3" size="sm" mt="16px" mb="6px" color=${C.ink}>Verify Installation</${Heading}>
                 <${CodeBlock}>${`$ lnaudit version
@@ -960,7 +965,7 @@ make release
                       <${Tr}><${Td}>v0.3.0</${Td}><${Td}>Configurable Hot-Wallet, Node-Balance, and Channel-Capacity Exposure Limits</${Td}><${Td}><${Badge} colorScheme="green">Complete</${Badge}></${Td}></${Tr}>
                       <${Tr}><${Td}>v0.3.0</${Td}><${Td}>Incident Readiness Checks for Rotation, Fund Sweep, Channel Close, and Restore Procedures</${Td}><${Td}><${Badge} colorScheme="green">Complete</${Badge}></${Td}></${Tr}>
                       <${Tr}><${Td}>v0.3.0</${Td}><${Td}>SARIF Output for GitHub Code Scanning and CI/CD Pipelines</${Td}><${Td}><${Badge} colorScheme="green">Complete</${Badge}></${Td}></${Tr}>
-                      <${Tr}><${Td}>v0.3.0</${Td}><${Td}>Temporal Channel-Jamming Analysis (`lnaudit jamming analyze`) with confidence/evidence outputs</${Td}><${Td}><${Badge} colorScheme="green">Complete</${Badge}></${Td}></${Tr}>
+                      <${Tr}><${Td}>v0.3.0</${Td}><${Td}>Temporal Channel-Jamming Analysis (lnaudit jamming analyze) with confidence/evidence outputs</${Td}><${Td}><${Badge} colorScheme="green">Complete</${Badge}></${Td}></${Tr}>
                     </${Tbody}>
                   </${Table}>
                 </${TableContainer}>
