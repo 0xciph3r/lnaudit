@@ -21,6 +21,7 @@ Built for production Lightning infrastructure: routing nodes, exchanges, payment
 - [Features](#features)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
+- [Temporal Jamming Analysis](#temporal-jamming-analysis)
 - [Example Output](#example-output)
 - [Hardened Config Generator](#hardened-config-generator)
 - [Security Modules](#security-modules)
@@ -205,6 +206,58 @@ Run both config and live checks:
 ```bash
 lnaudit scan --config ~/.lnd/lnd.conf --connect localhost:10009
 ```
+
+## Temporal Jamming Analysis
+
+`lnaudit jamming analyze` is the dedicated temporal workflow for jamming signals. It is separate from `scan` and does not change `scan` latency or behavior.
+
+### 1. Analyze a known timeline (offline replay)
+
+```bash
+lnaudit jamming analyze \
+  --from-file testdata/timelines/sustained_slot_jam.json \
+  --format table
+```
+
+### 2. Build your own timeline from live node snapshots
+
+Collect snapshots repeatedly (for example from cron/systemd timer):
+
+```bash
+lnaudit jamming analyze \
+  --connect localhost:10009 \
+  --record ~/.lnaudit/jamming-mainnet.json
+```
+
+Then analyze the accumulated timeline:
+
+```bash
+lnaudit jamming analyze \
+  --from-file ~/.lnaudit/jamming-mainnet.json \
+  --slot-threshold 0.60 \
+  --liquidity-threshold 0.60 \
+  --min-sustained-samples 3 \
+  --format json
+```
+
+### 3. CI gate for sustained findings
+
+```bash
+lnaudit jamming analyze \
+  --from-file ~/.lnaudit/jamming-mainnet.json \
+  --min-severity high \
+  --fail-on high \
+  --format sarif > jamming.sarif
+```
+
+### What the output means
+
+- **Classes**: `slot_pressure`, `liquidity_pressure`, `corroborated_jam`
+- **Confidence**:
+  - `observed`: anomaly seen, not sustained
+  - `sustained`: persisted across the configured sample window
+  - `corroborated`: sustained across multiple metric families
+- **Evidence payload** includes metric, measured value, threshold, sample count, and confidence for explainability.
 
 ### What Each Scan Mode Covers
 
