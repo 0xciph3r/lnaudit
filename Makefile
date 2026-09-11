@@ -4,7 +4,7 @@ VERSION   := $(shell git describe --tags --always --dirty 2>/dev/null || echo "d
 COMMIT    := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 LDFLAGS   := -s -w -X '$(MODULE)/cmd.Version=$(VERSION)' -X '$(MODULE)/cmd.CommitSHA=$(COMMIT)'
 GOFLAGS   := -trimpath
-PLATFORMS := linux/amd64 linux/arm64 darwin/amd64 darwin/arm64
+PLATFORMS := linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64 windows/arm64
 
 .PHONY: all build install clean test test-verbose test-race coverage lint fmt vet check help release
 
@@ -59,7 +59,7 @@ release: clean ## Cross-compile for all platforms
 		output=dist/$(BINARY)-$${os}-$${arch}; \
 		[ "$$os" = "windows" ] && output=$${output}.exe; \
 		echo "Building $$output..."; \
-		GOOS=$$os GOARCH=$$arch go build $(GOFLAGS) -ldflags "$(LDFLAGS)" -o $$output . || exit 1; \
+		CGO_ENABLED=0 GOOS=$$os GOARCH=$$arch go build $(GOFLAGS) -ldflags "$(LDFLAGS)" -o $$output . || exit 1; \
 	done
 	@echo "Release binaries in dist/"
 

@@ -101,6 +101,11 @@ curl -LO https://github.com/0xciph3r/lnaudit/releases/latest/download/lnaudit-li
 chmod +x lnaudit-linux-amd64
 sudo mv lnaudit-linux-amd64 /usr/local/bin/lnaudit
 
+# Linux (arm64)
+curl -LO https://github.com/0xciph3r/lnaudit/releases/latest/download/lnaudit-linux-arm64
+chmod +x lnaudit-linux-arm64
+sudo mv lnaudit-linux-arm64 /usr/local/bin/lnaudit
+
 # macOS (Apple Silicon)
 curl -LO https://github.com/0xciph3r/lnaudit/releases/latest/download/lnaudit-darwin-arm64
 chmod +x lnaudit-darwin-arm64
@@ -110,6 +115,21 @@ sudo mv lnaudit-darwin-arm64 /usr/local/bin/lnaudit
 curl -LO https://github.com/0xciph3r/lnaudit/releases/latest/download/lnaudit-darwin-amd64
 chmod +x lnaudit-darwin-amd64
 sudo mv lnaudit-darwin-amd64 /usr/local/bin/lnaudit
+
+# Windows (PowerShell, amd64)
+Invoke-WebRequest -Uri "https://github.com/0xciph3r/lnaudit/releases/latest/download/lnaudit-windows-amd64.exe" -OutFile "lnaudit.exe"
+.\lnaudit.exe version
+
+# Windows (PowerShell, arm64)
+Invoke-WebRequest -Uri "https://github.com/0xciph3r/lnaudit/releases/latest/download/lnaudit-windows-arm64.exe" -OutFile "lnaudit.exe"
+.\lnaudit.exe version
+
+# Verify checksums
+curl -LO https://github.com/0xciph3r/lnaudit/releases/latest/download/SHA256SUMS
+# Linux
+sha256sum -c SHA256SUMS | grep lnaudit-
+# macOS
+shasum -a 256 -c SHA256SUMS | grep lnaudit-
 ```
 
 ### Prerequisites

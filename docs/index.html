@@ -347,10 +347,33 @@ curl -LO https://github.com/0xciph3r/lnaudit/releases/latest/download/lnaudit-li
 chmod +x lnaudit-linux-amd64
 sudo mv lnaudit-linux-amd64 /usr/local/bin/lnaudit
 
+# Linux (arm64)
+curl -LO https://github.com/0xciph3r/lnaudit/releases/latest/download/lnaudit-linux-arm64
+chmod +x lnaudit-linux-arm64
+sudo mv lnaudit-linux-arm64 /usr/local/bin/lnaudit
+
 # macOS (Apple Silicon)
 curl -LO https://github.com/0xciph3r/lnaudit/releases/latest/download/lnaudit-darwin-arm64
 chmod +x lnaudit-darwin-arm64
-sudo mv lnaudit-darwin-arm64 /usr/local/bin/lnaudit`}</${CodeBlock}>
+sudo mv lnaudit-darwin-arm64 /usr/local/bin/lnaudit
+
+# macOS (Intel)
+curl -LO https://github.com/0xciph3r/lnaudit/releases/latest/download/lnaudit-darwin-amd64
+chmod +x lnaudit-darwin-amd64
+sudo mv lnaudit-darwin-amd64 /usr/local/bin/lnaudit
+
+# Windows (PowerShell, amd64)
+Invoke-WebRequest -Uri "https://github.com/0xciph3r/lnaudit/releases/latest/download/lnaudit-windows-amd64.exe" -OutFile "lnaudit.exe"
+.\lnaudit.exe version
+
+# Windows (PowerShell, arm64)
+Invoke-WebRequest -Uri "https://github.com/0xciph3r/lnaudit/releases/latest/download/lnaudit-windows-arm64.exe" -OutFile "lnaudit.exe"
+.\lnaudit.exe version
+
+# Verify checksums
+curl -LO https://github.com/0xciph3r/lnaudit/releases/latest/download/SHA256SUMS
+sha256sum -c SHA256SUMS | grep lnaudit-
+shasum -a 256 -c SHA256SUMS | grep lnaudit-`}</${CodeBlock}>
 
                 <${Heading} as="h3" size="sm" mt="16px" mb="6px" color=${C.ink}>Verify Installation</${Heading}>
                 <${CodeBlock}>${`$ lnaudit version
@@ -890,7 +913,12 @@ make test-race
 make coverage
 
 # Cross-Compile Release Binaries
-make release`}</${CodeBlock}>
+make release
+
+# Targets:
+# linux/amd64, linux/arm64
+# darwin/amd64, darwin/arm64
+# windows/amd64, windows/arm64`}</${CodeBlock}>
 
                 <${Heading} as="h3" size="sm" mt="16px" mb="8px" color=${C.ink}>Adding a New Security Check</${Heading}>
                 <${OrderedList} color=${C.greyMid} spacing="3px" pl="4px">
@@ -924,14 +952,15 @@ make release`}</${CodeBlock}>
                       <${Tr}><${Td}>v0.2.0</${Td}><${Td}>Hardened lnd.conf Generator with Routing and Private Profiles</${Td}><${Td}><${Badge} colorScheme="green">Complete</${Badge}></${Td}></${Tr}>
                       <${Tr}><${Td}>v0.2.0</${Td}><${Td}>Expanded Static Checks for LND Security Flags</${Td}><${Td}><${Badge} colorScheme="green">Complete</${Badge}></${Td}></${Tr}>
                       <${Tr}><${Td}>v0.2.0</${Td}><${Td}>Live Channel-Jamming, Zero-Conf, and HTLC-Limit Detection</${Td}><${Td}><${Badge} colorScheme="green">Complete</${Badge}></${Td}></${Tr}>
-                      <${Tr}><${Td}>Next</${Td}><${Td}>Secret Hygiene Scanning for Macaroons, TLS Keys, API Credentials, and Unsafe Env Files</${Td}><${Td}><${Badge} colorScheme="purple">Planned</${Badge}></${Td}></${Tr}>
-                      <${Tr}><${Td}>Next</${Td}><${Td}>Macaroon Least-Privilege Audit for Integrations</${Td}><${Td}><${Badge} colorScheme="purple">Planned</${Badge}></${Td}></${Tr}>
-                      <${Tr}><${Td}>Next</${Td}><${Td}>Findings-Aware Config Patching (<${Code}>lnaudit suggest-config</${Code}>)</${Td}><${Td}><${Badge} colorScheme="purple">Planned</${Badge}></${Td}></${Tr}>
-                      <${Tr}><${Td}>Next</${Td}><${Td}>Watchtower Connectivity and Health Live Checks</${Td}><${Td}><${Badge} colorScheme="purple">Planned</${Badge}></${Td}></${Tr}>
-                      <${Tr}><${Td}>Next</${Td}><${Td}>Channel Backup Freshness and Off-Node Backup Verification</${Td}><${Td}><${Badge} colorScheme="purple">Planned</${Badge}></${Td}></${Tr}>
-                      <${Tr}><${Td}>Future</${Td}><${Td}>Configurable Hot-Wallet, Node-Balance, and Channel-Capacity Exposure Limits</${Td}><${Td}><${Badge} colorScheme="purple">Planned</${Badge}></${Td}></${Tr}>
-                      <${Tr}><${Td}>Future</${Td}><${Td}>Incident Readiness Checks for Rotation, Fund Sweep, Channel Close, and Restore Procedures</${Td}><${Td}><${Badge} colorScheme="purple">Planned</${Badge}></${Td}></${Tr}>
-                      <${Tr}><${Td}>Future</${Td}><${Td}>SARIF Output for GitHub Code Scanning and CI/CD Pipelines</${Td}><${Td}><${Badge} colorScheme="purple">Planned</${Badge}></${Td}></${Tr}>
+                      <${Tr}><${Td}>v0.3.0</${Td}><${Td}>Secret Hygiene Scanning for Macaroons, TLS Keys, API Credentials, and Unsafe Env Files</${Td}><${Td}><${Badge} colorScheme="green">Complete</${Badge}></${Td}></${Tr}>
+                      <${Tr}><${Td}>v0.3.0</${Td}><${Td}>Macaroon Least-Privilege Audit for Integrations</${Td}><${Td}><${Badge} colorScheme="green">Complete</${Badge}></${Td}></${Tr}>
+                      <${Tr}><${Td}>v0.3.0</${Td}><${Td}>Findings-Aware Config Patching (<${Code}>lnaudit suggest-config</${Code}>)</${Td}><${Td}><${Badge} colorScheme="green">Complete</${Badge}></${Td}></${Tr}>
+                      <${Tr}><${Td}>v0.3.0</${Td}><${Td}>Watchtower Connectivity and Health Live Checks</${Td}><${Td}><${Badge} colorScheme="green">Complete</${Badge}></${Td}></${Tr}>
+                      <${Tr}><${Td}>v0.3.0</${Td}><${Td}>Channel Backup Readiness Verification</${Td}><${Td}><${Badge} colorScheme="green">Complete</${Badge}></${Td}></${Tr}>
+                      <${Tr}><${Td}>v0.3.0</${Td}><${Td}>Configurable Hot-Wallet, Node-Balance, and Channel-Capacity Exposure Limits</${Td}><${Td}><${Badge} colorScheme="green">Complete</${Badge}></${Td}></${Tr}>
+                      <${Tr}><${Td}>v0.3.0</${Td}><${Td}>Incident Readiness Checks for Rotation, Fund Sweep, Channel Close, and Restore Procedures</${Td}><${Td}><${Badge} colorScheme="green">Complete</${Badge}></${Td}></${Tr}>
+                      <${Tr}><${Td}>v0.3.0</${Td}><${Td}>SARIF Output for GitHub Code Scanning and CI/CD Pipelines</${Td}><${Td}><${Badge} colorScheme="green">Complete</${Badge}></${Td}></${Tr}>
+                      <${Tr}><${Td}>v0.3.0</${Td}><${Td}>Temporal Channel-Jamming Analysis (`lnaudit jamming analyze`) with confidence/evidence outputs</${Td}><${Td}><${Badge} colorScheme="green">Complete</${Badge}></${Td}></${Tr}>
                     </${Tbody}>
                   </${Table}>
                 </${TableContainer}>
